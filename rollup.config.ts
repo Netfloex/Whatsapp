@@ -2,7 +2,6 @@ import commonjs from "@rollup/plugin-commonjs";
 import json from "@rollup/plugin-json";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import run from "@rollup/plugin-run";
-
 import { join } from "path";
 import { defineConfig } from "rollup";
 import { terser } from "rollup-plugin-terser";
