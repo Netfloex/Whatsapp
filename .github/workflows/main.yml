@@ -26,4 +26,4 @@ jobs:
               with:
                   username: netfloex
                   token: ${{ secrets.DOCKERHUB_TOKEN }}
-                  tags: netfloex/TEMPLATE:latest
+                  tags: netfloex/whatsapp:latest

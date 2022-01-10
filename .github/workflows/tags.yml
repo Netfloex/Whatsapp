@@ -18,4 +18,4 @@ jobs:
               with:
                   username: netfloex
                   token: ${{ secrets.DOCKERHUB_TOKEN }}
-                  tags: netfloex/TEMPLATE:${{ steps.vars.outputs.tag }}
+                  tags: netfloex/whatsapp:${{ steps.vars.outputs.tag }}
