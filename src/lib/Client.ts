@@ -20,7 +20,7 @@ export class Client extends EventEmitter {
 		messages: [],
 	};
 
-	chats: Chat[];
+	chats: Chat[] = [];
 
 	private joinData = (...paths: string[]): string =>
 		join(process.cwd(), "data", ...paths);
