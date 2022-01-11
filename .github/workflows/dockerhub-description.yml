@@ -16,6 +16,6 @@ jobs:
               uses: peter-evans/dockerhub-description@v2
               with:
                   username: netfloex
-                  password: ${{ secrets.DOCKERHUB_PASSWORD }}
+                  password: ${{ secrets.DOCKERHUB_TOKEN }}
                   repository: netfloex/whatsapp
                   short-description: ${{ github.event.repository.description }}

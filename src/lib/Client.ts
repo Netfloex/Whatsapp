@@ -101,7 +101,7 @@ export class Client extends EventEmitter {
 			})
 			.on("messages.upsert", (newM) => {
 				console.log("messages.upsert", newM);
-				if (newM.type == "notify") {
+				if (["append", "notify"].includes(newM.type)) {
 					console.log("Added ^ msg to db");
 					this.data.messages.unshift(...newM.messages);
 					this.emit("data");
