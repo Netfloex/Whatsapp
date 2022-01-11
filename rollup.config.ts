@@ -10,16 +10,17 @@ import typescript from "rollup-plugin-typescript2";
 const dev = process.env.ROLLUP_WATCH === "true";
 
 export default defineConfig({
-	input: join("src/index.ts"),
+	input: join(process.cwd(), "src", "index.ts"),
 	output: {
 		dir: "dist",
 		format: "cjs",
 		generatedCode: "es5",
 		plugins: dev ? [] : [terser()],
 	},
-	external: [],
+	preserveEntrySignatures: false,
+	external: ["qrcode-terminal"],
 	plugins: [
-		dev && run(),
+		dev && run({ execArgv: ["--inspect"] }),
 		json(),
 		typescript(),
 		commonjs(),

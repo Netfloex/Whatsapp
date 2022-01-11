@@ -12,8 +12,8 @@ jobs:
             - name: Setup yarn and install dependencies
               uses: netfloex/actions/yarn@master
 
-            - name: Run tests
-              run: yarn test
+            - name: Check typescript
+              run: yarn typescript
             - name: Test ESLint
               run: yarn lint
 

@@ -1,1 +1,20 @@
-{}
+{
+	"compilerOptions": {
+		"allowSyntheticDefaultImports": true,
+		"baseUrl": ".",
+		"downlevelIteration": true,
+		"esModuleInterop": true,
+		"module": "esnext",
+		"moduleResolution": "node",
+		"noEmit": true,
+		"paths": {
+			"@utils": ["src/utils"],
+			"@lib": ["src/lib"],
+			"@typings/*": ["src/typings/*"]
+		},
+		"skipLibCheck": true,
+		"strict": false,
+		"target": "ES5",
+		"typeRoots": ["src/typings", "node_modules/@types"]
+	}
+}
