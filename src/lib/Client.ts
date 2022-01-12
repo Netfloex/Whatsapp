@@ -5,7 +5,7 @@ import { pathExists, readJSON, remove, writeJSON } from "fs-extra";
 import { join } from "path";
 import { EventEmitter } from "stream";
 
-import { Chat } from "@lib";
+import { Chat, Message } from "@lib";
 import { createConnection } from "@utils";
 
 export class Client extends EventEmitter {
@@ -48,6 +48,7 @@ export class Client extends EventEmitter {
 							),
 					)
 					.sort((a, b) => b.time.toMillis() - a.time.toMillis());
+				this.emit("chats", this.chats);
 			}
 		});
 	}
@@ -105,6 +106,14 @@ export class Client extends EventEmitter {
 					console.log("Added ^ msg to db");
 					this.data.messages.unshift(...newM.messages);
 					this.emit("data");
+				}
+				if (newM.type == "notify") {
+					this.emit(
+						"message",
+						newM.messages.map(
+							(m) => new Message(m, this.data.contacts),
+						),
+					);
 				}
 			});
 	}
