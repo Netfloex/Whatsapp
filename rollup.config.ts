@@ -17,8 +17,9 @@ export default defineConfig({
 		generatedCode: "es5",
 		plugins: dev ? [] : [terser()],
 	},
+
 	preserveEntrySignatures: false,
-	external: ["qrcode-terminal"],
+	external: ["qrcode-terminal", "sharp"],
 	plugins: [
 		dev && run({ execArgv: ["--inspect"] }),
 		json(),

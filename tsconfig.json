@@ -1,16 +1,17 @@
 {
 	"compilerOptions": {
-		"allowSyntheticDefaultImports": true,
 		"baseUrl": ".",
 		"downlevelIteration": true,
 		"esModuleInterop": true,
+		"incremental": true,
 		"module": "esnext",
 		"moduleResolution": "node",
 		"noEmit": true,
+		"outDir": "dist",
 		"paths": {
-			"@utils": ["src/utils"],
 			"@lib": ["src/lib"],
-			"@typings/*": ["src/typings/*"]
+			"@typings/*": ["src/typings/*"],
+			"@utils": ["src/utils"]
 		},
 		"skipLibCheck": true,
 		"strict": false,

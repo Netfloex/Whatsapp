@@ -6,7 +6,7 @@
 	"scripts": {
 		"start": "node .",
 		"build": "rollup -c",
-		"dev": "rollup -cw",
+		"dev": "tsnd --respawn -T --rs --cls -r tsconfig-paths/register .",
 		"lint": "eslint .",
 		"prepare": "husky install",
 		"typescript": "tsc --noEmit"
@@ -45,6 +45,8 @@
 		"rollup-plugin-terser": "^7.0.2",
 		"rollup-plugin-typescript2": "^0.31.1",
 		"socket.io": "^4.4.1",
+		"ts-node-dev": "^1.1.8",
+		"tsconfig-paths": "^3.12.0",
 		"typescript": "^4.5.4"
 	}
 }
