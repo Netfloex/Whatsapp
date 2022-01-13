@@ -43,8 +43,8 @@ export class SocketIO {
 				);
 			});
 
-			sock.on("messages", (reply) => {
-				reply(this.client.chats.map((e) => e.toJSON()));
+			sock.on("chats", (reply) => {
+				reply(this.client.chats.slice(0, 100).map((e) => e.toJSON()));
 			});
 
 			sock.on("message.send", async ({ jid, ...content }, reply) => {

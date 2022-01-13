@@ -11,6 +11,7 @@ import { parseTimestamp } from "@utils";
 export class Chat extends EventEmitter {
 	private wa?: WAChat;
 
+	id: string;
 	name: string;
 	time: DateTime;
 	messages: Message[];
@@ -19,6 +20,8 @@ export class Chat extends EventEmitter {
 	constructor(chat: WAChat, contacts: Contact[], messages: WAMessage[]) {
 		super();
 		this.wa = chat;
+
+		this.id = chat.id;
 
 		this.name =
 			chat.name ?? contacts.find((c) => c.id == chat.id)?.name ?? chat.id;
@@ -36,7 +39,7 @@ export class Chat extends EventEmitter {
 	}
 	toJSON(): ChatJson {
 		return {
-			...pick(this, "name", "unreadCount"),
+			...pick(this, "id", "name", "unreadCount"),
 			messages: this.messages.map((msg) => msg.toJSON()),
 			time: this.time.toJSON(),
 		};

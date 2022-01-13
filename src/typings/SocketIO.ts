@@ -1,6 +1,7 @@
 import { AnyMessageContent, WAMessageContent } from "@adiwajshing/baileys-md";
 
 export type MessageJson = {
+	id?: string;
 	time?: string;
 	message?: WAMessageContent;
 	sender?: string;
@@ -11,6 +12,7 @@ export type MessageJson = {
 };
 
 export type ChatJson = {
+	id: string;
 	name: string;
 	time: string;
 	messages: MessageJson[];
@@ -22,7 +24,7 @@ export interface ServerToClient {
 }
 
 export interface ClientToServer {
-	messages: (reply: (chats: ChatJson[]) => void) => void;
+	chats: (reply: (chats: ChatJson[]) => void) => void;
 
 	"message.send": (
 		message: AnyMessageContent & {

@@ -8,6 +8,7 @@ import { parseTimestamp } from "@utils";
 export class Message {
 	private wa?: WAMessage;
 
+	id?: string;
 	time?: DateTime;
 	message?: WAMessageContent;
 	sender?: string;
@@ -19,6 +20,7 @@ export class Message {
 	constructor(message: WAMessage, contacts: Contact[]) {
 		this.wa = message;
 
+		this.id = message.key.id;
 		this.time = parseTimestamp(message.messageTimestamp);
 		this.message = message?.message;
 		this.chatJid = message.key.remoteJid;
@@ -40,7 +42,15 @@ export class Message {
 
 	toJSON(): MessageJson {
 		return {
-			...pick(this, "message", "sender", "fromMe", "chatJid", "content"),
+			...pick(
+				this,
+				"id",
+				"message",
+				"sender",
+				"fromMe",
+				"chatJid",
+				"content",
+			),
 			time: this.time.toJSON(),
 		};
 	}
