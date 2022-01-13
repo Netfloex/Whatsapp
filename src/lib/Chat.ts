@@ -1,5 +1,6 @@
 import { Contact, WAMessage } from "@adiwajshing/baileys-md";
 import { WAChat } from "@typings/Baileys";
+import { ChatJson } from "@typings/SocketIO";
 import { pick } from "lodash";
 import { DateTime } from "luxon";
 import { Message } from "src/lib/Message";
@@ -33,11 +34,11 @@ export class Chat extends EventEmitter {
 
 		this.unreadCount = chat.unreadCount;
 	}
-	// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-	toJSON() {
+	toJSON(): ChatJson {
 		return {
-			...pick(this, "name", "time"),
+			...pick(this, "name", "unreadCount"),
 			messages: this.messages.map((msg) => msg.toJSON()),
+			time: this.time.toJSON(),
 		};
 	}
 }

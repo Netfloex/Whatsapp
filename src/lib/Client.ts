@@ -1,19 +1,16 @@
 import { DisconnectReason } from "@adiwajshing/baileys-md";
 import { Boom } from "@hapi/boom";
 import { ChatSet, Socket } from "@typings/Baileys";
-import express from "express";
 import { pathExists, readJSON, remove, writeJSON } from "fs-extra";
-import { createServer } from "http";
 import { join } from "path";
-import { Server } from "socket.io";
 import { EventEmitter } from "stream";
 
-import { Chat, Message } from "@lib";
+import { Chat, Message, SocketIO } from "@lib";
 import { createConnection } from "@utils";
 
 export class Client extends EventEmitter {
 	socket: Socket;
-	io: Server;
+	io: SocketIO;
 
 	private authFile: string;
 	private chatSetFile: string;
@@ -33,39 +30,7 @@ export class Client extends EventEmitter {
 		super();
 		this.authFile = authFile;
 		this.chatSetFile = this.joinData("chatset.json");
-
-		const app = express();
-		const server = createServer(app);
-		this.io = new Server(server, { cors: { origin: "*" } });
-
-		app.get("/", (req, res) => {
-			res.json(this.chats.slice(0, 30).map((chat) => chat.toJSON()));
-		});
-
-		this.io.on("connection", (sock) => {
-			console.log(`Connection: ${sock.id.slice(0, 4)}`);
-			sock.onAny((ev, data) => {
-				console.log(
-					`Socket: ${sock.id.slice(0, 4)}, event: ${ev}`,
-					data,
-				);
-			});
-		});
-
-		this.on("chats", (chats: Chat[]) => {
-			console.log("chats", chats.slice(0, 10));
-		});
-
-		this.on("message", (messages: Message[]) => {
-			console.log("new message");
-
-			this.io.sockets.emit(
-				"message",
-				messages.map((msg) => msg.toJSON()),
-			);
-		});
-
-		server.listen(3000);
+		this.io = new SocketIO(this);
 
 		this.on("data", async (write = true) => {
 			if (write) {

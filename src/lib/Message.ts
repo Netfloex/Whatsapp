@@ -1,4 +1,5 @@
 import { Contact, WAMessage, WAMessageContent } from "@adiwajshing/baileys-md";
+import { MessageJson } from "@typings/SocketIO";
 import { pick } from "lodash";
 import { DateTime } from "luxon";
 
@@ -11,6 +12,7 @@ export class Message {
 	message?: WAMessageContent;
 	sender?: string;
 	fromMe?: boolean;
+	chatJid?: string;
 
 	content?: string;
 
@@ -19,7 +21,7 @@ export class Message {
 
 		this.time = parseTimestamp(message.messageTimestamp);
 		this.message = message?.message;
-
+		this.chatJid = message.key.remoteJid;
 		this.fromMe = message.key.fromMe;
 
 		const senderJid = message.participant ?? message.key.remoteJid;
@@ -36,8 +38,10 @@ export class Message {
 			message?.message?.imageMessage?.caption;
 	}
 
-	// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-	toJSON() {
-		return pick(this, "time", "message", "sender", "fromMe", "content");
+	toJSON(): MessageJson {
+		return {
+			...pick(this, "message", "sender", "fromMe", "chatJid", "content"),
+			time: this.time.toJSON(),
+		};
 	}
 }
