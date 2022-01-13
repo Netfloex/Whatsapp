@@ -2,7 +2,7 @@ import makeConnection, {
 	Chat,
 	Contact,
 	WAMessage,
-} from "@adiwajshing/baileys-md/src";
+} from "@adiwajshing/baileys-md";
 
 export type WAChat = Chat & {
 	conversationTimestamp?: {

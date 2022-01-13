@@ -1,6 +1,6 @@
 import makeConnection, {
 	useSingleFileAuthState,
-} from "@adiwajshing/baileys-md/src";
+} from "@adiwajshing/baileys-md";
 import { Socket } from "@typings/Baileys";
 import { ensureDir } from "fs-extra";
 import { dirname } from "path";

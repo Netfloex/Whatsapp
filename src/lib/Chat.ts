@@ -1,4 +1,4 @@
-import { Contact, WAMessage } from "@adiwajshing/baileys-md/src";
+import { Contact, WAMessage } from "@adiwajshing/baileys-md";
 import { WAChat } from "@typings/Baileys";
 import { pick } from "lodash";
 import { DateTime } from "luxon";
