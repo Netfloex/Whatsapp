@@ -12,6 +12,9 @@ jobs:
             - name: Setup yarn and install dependencies
               uses: netfloex/actions/yarn@master
 
+            - name: Build Baileys-MD
+              run: yarn prepare
+
             - name: Check typescript
               run: yarn typescript
             - name: Test ESLint

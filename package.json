@@ -8,7 +8,7 @@
 		"build": "rollup -c",
 		"dev": "tsnd --respawn -T --rs --cls -r tsconfig-paths/register src",
 		"lint": "eslint .",
-		"prepare": "tsc -p node_modules/@adiwajshing/baileys-md && husky install",
+		"prepare": "tsc -p node_modules/@adiwajshing/baileys-md || exit 0 && husky install",
 		"typescript": "tsc --noEmit"
 	},
 	"dependencies": {
