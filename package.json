@@ -11,7 +11,9 @@
 		"prepare": "tsc -p node_modules/@adiwajshing/baileys-md || exit 0 && husky install",
 		"typescript": "tsc --noEmit"
 	},
-	"dependencies": {},
+	"dependencies": {
+		"pino-pretty": "^7.3.0"
+	},
 	"devDependencies": {
 		"@adiwajshing/baileys-md": "github:adiwajshing/baileys#multi-device",
 		"@rollup/plugin-commonjs": "^21.0.1",
@@ -36,7 +38,6 @@
 		"husky": "^7.0.4",
 		"lodash": "^4.17.21",
 		"luxon": "^2.3.0",
-		"pino-pretty": "^7.3.0",
 		"prettier": "^2.5.1",
 		"qrcode-terminal": "^0.12.0",
 		"rollup": "^2.63.0",
