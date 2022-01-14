@@ -19,13 +19,12 @@ export default defineConfig({
 	},
 
 	preserveEntrySignatures: false,
-	external: ["qrcode-terminal", "sharp", "jimp"],
 
 	plugins: [
 		nodeResolve({ preferBuiltins: true }),
 		dev && run({ execArgv: ["--inspect"] }),
 		json(),
 		typescript(),
-		commonjs({ ignore: ["sharp"] }),
+		commonjs({ ignore: ["sharp", "jimp", "qrcode-terminal"] }),
 	],
 });
