@@ -26,16 +26,25 @@ export class SocketIO {
 		});
 
 		this.client.on("message", (messages: Message[]) => {
-			console.log("new message");
-
 			this.io.sockets.emit(
 				"message",
 				messages.map((msg) => msg.toJSON()),
 			);
 		});
-
 		this.io.on("connection", (sock) => {
-			console.log(`Connection: ${sock.id.slice(0, 4)}`);
+			sock.on("disconnect", () => {
+				console.log(
+					`Disconnected: ${sock.id.slice(0, 4)}, Clients: ${
+						this.io.of("/").sockets.size
+					}`,
+				);
+			});
+
+			console.log(
+				`Connection: ${sock.id.slice(0, 4)}, Clients: ${
+					this.io.engine.clientsCount
+				}`,
+			);
 			sock.onAny((ev, data) => {
 				console.log(
 					`Socket: ${sock.id.slice(0, 4)}, event: ${ev}`,
@@ -48,7 +57,7 @@ export class SocketIO {
 			});
 
 			sock.on("message.send", async ({ jid, ...content }, reply) => {
-				console.log(content);
+				console.log(`Send a message to ${jid}`);
 
 				await this.client.socket.sendMessage(jid, content);
 

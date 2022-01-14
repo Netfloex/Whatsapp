@@ -13,13 +13,10 @@ export const createConnection = async (authFile: string): Promise<Socket> => {
 	const c = makeConnection({
 		auth: state,
 		printQRInTerminal: true,
-		logger: P({ level: "debug", prettyPrint: true }),
+		logger: P({ level: "fatal", prettyPrint: true }),
 	});
 
 	c.ev.on("creds.update", saveState);
-	c.ev.on("messages.update", (messages) => {
-		console.log("messages.update", messages);
-	});
 
 	return c;
 };

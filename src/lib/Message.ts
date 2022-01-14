@@ -1,8 +1,9 @@
-import { Contact, WAMessage, WAMessageContent } from "@adiwajshing/baileys-md";
-import { MessageJson } from "@typings/SocketIO";
+import { WAMessage, WAMessageContent } from "@adiwajshing/baileys-md";
+import { MessageJson, Person } from "@typings/SocketIO";
 import { pick } from "lodash";
 import { DateTime } from "luxon";
 
+import { Client } from "@lib";
 import { parseTimestamp } from "@utils";
 
 export class Message {
@@ -11,28 +12,30 @@ export class Message {
 	id?: string;
 	time?: DateTime;
 	message?: WAMessageContent;
-	sender?: string;
+	sender?: Person = { id: "" };
 	fromMe?: boolean;
-	chatJid?: string;
+	chatId?: string;
 
 	content?: string;
 
-	constructor(message: WAMessage, contacts: Contact[]) {
+	constructor(message: WAMessage, client: Client) {
 		this.wa = message;
 
 		this.id = message.key.id;
 		this.time = parseTimestamp(message.messageTimestamp);
 		this.message = message?.message;
-		this.chatJid = message.key.remoteJid;
+		this.chatId = message.key.remoteJid;
 		this.fromMe = message.key.fromMe;
 
-		const senderJid = message.participant ?? message.key.remoteJid;
-		this.sender =
-			message.pushName ??
-			(message.key.fromMe
-				? "You"
-				: contacts.find((c) => c.id == senderJid)?.name) ??
-			senderJid;
+		this.sender.id = this.fromMe ? client.me.id : message.key.participant;
+
+		this.sender.contactName = client.data.contacts.find(
+			(c) => c.id == this.sender.id,
+		)?.name;
+		this.sender.pushname = message.pushName;
+		//  ??
+		// (message.key.fromMe ? "You" : message.pushName) ??
+		// senderJid;
 
 		this.content =
 			message?.message?.conversation ??
@@ -48,7 +51,7 @@ export class Message {
 				"message",
 				"sender",
 				"fromMe",
-				"chatJid",
+				"chatId",
 				"content",
 			),
 			time: this.time.toJSON(),

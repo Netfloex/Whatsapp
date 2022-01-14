@@ -3,13 +3,19 @@ import type {
 	WAMessageContent,
 } from "@adiwajshing/baileys-md";
 
+export type Person = {
+	pushname?: string;
+	id: string;
+	contactName?: string;
+};
+
 export type MessageJson = {
 	id?: string;
 	time?: string;
 	message?: WAMessageContent;
-	sender?: string;
+	sender?: Person;
 	fromMe?: boolean;
-	chatJid?: string;
+	chatId?: string;
 
 	content?: string;
 };
