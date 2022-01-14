@@ -19,7 +19,7 @@ export default defineConfig({
 	},
 
 	preserveEntrySignatures: false,
-	external: ["qrcode-terminal", "sharp"],
+	external: ["qrcode-terminal", "sharp", "jimp"],
 	plugins: [
 		dev && run({ execArgv: ["--inspect"] }),
 		json(),

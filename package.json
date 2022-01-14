@@ -12,7 +12,8 @@
 		"typescript": "tsc --noEmit"
 	},
 	"dependencies": {
-		"qrcode-terminal": "^0.12.0"
+		"qrcode-terminal": "^0.12.0",
+		"sharp": "^0.29.3"
 	},
 	"devDependencies": {
 		"@adiwajshing/baileys-md": "github:adiwajshing/baileys#multi-device",
