@@ -1,4 +1,7 @@
-import { AnyMessageContent, WAMessageContent } from "@adiwajshing/baileys-md";
+import type {
+	AnyMessageContent,
+	WAMessageContent,
+} from "@adiwajshing/baileys-md";
 
 export type MessageJson = {
 	id?: string;
