@@ -4,14 +4,14 @@ import type {
 } from "@adiwajshing/baileys-md";
 
 export type Person = {
-	pushname?: string;
-	id: string;
+	id?: string | null;
+	pushname?: string | null;
 	contactName?: string;
 };
 
 export type MessageJson = {
 	id?: string;
-	time?: string;
+	time: string;
 	message?: WAMessageContent;
 	sender?: Person;
 	fromMe?: boolean;

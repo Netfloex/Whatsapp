@@ -20,9 +20,7 @@ export class SocketIO {
 		this.handleAuthentication();
 
 		this.app.get("/", (req, res) => {
-			res.json(
-				this.client.chats.slice(0, 30).map((chat) => chat.toJSON()),
-			);
+			res.json(this.client.chats.slice(0, 10));
 		});
 
 		this.client.on("message", (messages: Message[]) => {
@@ -53,13 +51,13 @@ export class SocketIO {
 			});
 
 			sock.on("chats", (reply) => {
-				reply(this.client.chats.slice(0, 100).map((e) => e.toJSON()));
+				reply(this.client.chats.slice(0, 40));
 			});
 
 			sock.on("message.send", async ({ jid, ...content }, reply) => {
 				console.log(`Send a message to ${jid}`);
 
-				await this.client.socket.sendMessage(jid, content);
+				await this.client.socket?.sendMessage(jid, content);
 
 				reply("Done");
 			});

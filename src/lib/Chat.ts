@@ -1,23 +1,23 @@
+import { Chat as BaileysChat } from "@adiwajshing/baileys-md";
 import { WAChat } from "@typings/Baileys";
-import { ChatJson } from "@typings/SocketIO";
+import { ChatJson, MessageJson } from "@typings/SocketIO";
 import { pick } from "lodash";
 import { DateTime } from "luxon";
-import { Message } from "src/lib/Message";
 import { EventEmitter } from "stream";
 
-import { Client } from "@lib";
+import { Client, Message } from "@lib";
 import { parseTimestamp } from "@utils";
 
 export class Chat extends EventEmitter {
-	private wa?: WAChat;
+	private wa?: BaileysChat;
 
 	id: string;
 	name: string;
 	time: DateTime;
-	messages: Message[];
+	messages: MessageJson[];
 	unreadCount?: number;
 
-	constructor(chat: WAChat, client: Client) {
+	constructor(chat: BaileysChat, client: Client) {
 		super();
 		this.wa = chat;
 
@@ -25,24 +25,27 @@ export class Chat extends EventEmitter {
 
 		this.name =
 			chat.name ??
-			client.data.contacts.find((c) => c.id == chat.id)?.name ??
+			client.store.data?.contacts?.find((c) => c.id == chat.id)?.name ??
 			chat.id;
 
-		this.messages = client.data.messages
-			.filter((msg) => msg.key.remoteJid == chat.id && "message" in msg)
-			.map((msg) => new Message(msg, client))
-			.sort((a, b) => b.time.toMillis() - a.time.toMillis());
+		this.messages =
+			client.store.data.messages
+				?.map((msg) => new Message(msg, client).toJSON())
+				.filter((msg) => msg.chatId == chat.id)
+				.sort(
+					(a, b) =>
+						new Date(b.time).valueOf() - new Date(a.time).valueOf(),
+				) ?? [];
 
 		this.time = this.messages.length
-			? this.messages[0].time
-			: parseTimestamp(chat.conversationTimestamp.low);
+			? DateTime.fromISO(this.messages[0].time)
+			: parseTimestamp((chat as WAChat)?.conversationTimestamp?.low);
 
-		this.unreadCount = chat.unreadCount;
+		this.unreadCount = chat.unreadCount ?? undefined;
 	}
 	toJSON(): ChatJson {
 		return {
-			...pick(this, "id", "name", "unreadCount"),
-			messages: this.messages.map((msg) => msg.toJSON()),
+			...pick(this, "id", "name", "unreadCount", "messages"),
 			time: this.time.toJSON(),
 		};
 	}

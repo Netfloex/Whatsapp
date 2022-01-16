@@ -14,9 +14,15 @@
 			"@utils": ["src/utils"]
 		},
 		"skipLibCheck": true,
-		"strict": false,
+		"strict": false, // Enabled only for src
 		"target": "ES5",
-		"typeRoots": ["src/typings", "node_modules/@types"]
+		"typeRoots": ["src/typings", "node_modules/@types"],
+		"plugins": [
+			{
+				"name": "typescript-strict-plugin",
+				"paths": ["src"]
+			}
+		]
 	},
 	"ts-node": {
 		"compilerOptions": {

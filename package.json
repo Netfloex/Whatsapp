@@ -6,10 +6,10 @@
 	"scripts": {
 		"start": "node .",
 		"build": "rollup -c",
-		"dev": "tsnd --respawn -T --rs --cls -r tsconfig-paths/register src",
+		"dev": "tsnd --respawn -T --rs --cls --inspect --exit-child -r tsconfig-paths/register src",
 		"lint": "eslint .",
 		"prepare": "tsc -p node_modules/@adiwajshing/baileys-md || exit 0 && husky install",
-		"typescript": "tsc --noEmit"
+		"typescript": "tsc && tsc-strict"
 	},
 	"dependencies": {
 		"pino-pretty": "^7.3.0"
@@ -46,6 +46,7 @@
 		"socket.io": "^4.4.1",
 		"ts-node-dev": "^1.1.8",
 		"tsconfig-paths": "^3.12.0",
-		"typescript": "^4.5.4"
+		"typescript": "^4.5.4",
+		"typescript-strict-plugin": "^1.1.2"
 	}
 }
