@@ -30,8 +30,8 @@ export class Chat extends EventEmitter {
 
 		this.messages =
 			client.store.data.messages
-				?.map((msg) => new Message(msg, client).toJSON())
-				.filter((msg) => msg.chatId == chat.id)
+				?.filter((msg) => msg.key.remoteJid == chat.id)
+				.map((msg) => new Message(msg, client).toJSON())
 				.sort(
 					(a, b) =>
 						new Date(b.time).valueOf() - new Date(a.time).valueOf(),

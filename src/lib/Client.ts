@@ -28,6 +28,7 @@ export class Client extends EventEmitter {
 			this.store.data.chats
 				?.map((chat) => new Chat(chat, this))
 				.sort((a, b) => b.time.toMillis() - a.time.toMillis())
+				.slice(0, 100)
 				.map((chat) => chat.toJSON()) ?? []
 		);
 	}
@@ -53,9 +54,18 @@ export class Client extends EventEmitter {
 				WAMessageStubType.REVOKE,
 				WAMessageStubType.E2E_DEVICE_CHANGED,
 				WAMessageStubType.E2E_IDENTITY_CHANGED,
+				WAMessageStubType.CIPHERTEXT,
 			].includes(msg.messageStubType as WAMessageStubType)
 		)
 			return false;
+
+		if (
+			this.store.data.messages?.find(
+				(message) => message.key.id == msg.key.id,
+			)
+		)
+			return false;
+
 		return true;
 	}
 
@@ -98,7 +108,10 @@ export class Client extends EventEmitter {
 				}
 			})
 			.on("chats.set", async ({ chats, messages }) => {
-				this.store.data.messages = messages.filter(this.filterMessages);
+				this.store.data.messages = messages.filter(
+					this.filterMessages,
+					this,
+				);
 				this.store.data.chats = chats;
 				await this.store.write();
 			})
@@ -107,18 +120,21 @@ export class Client extends EventEmitter {
 				await this.store.write();
 			})
 			.on("messages.upsert", async (newM) => {
-				if (["append", "notify"].includes(newM.type)) {
+				console.log("New Messages: ", newM);
+
+				if (newM.type == "notify") {
+					const messages = newM.messages
+						.filter(this.filterMessages, this)
+						.map((m) => new Message(m, this));
+
+					messages.length && this.emit("message", messages);
+				}
+				if (["append", "notify", "prepend"].includes(newM.type)) {
 					this.store.data.messages?.unshift(
-						...newM.messages.filter(this.filterMessages),
+						...newM.messages.filter(this.filterMessages, this),
 					);
 
 					await this.store.write();
-				}
-				if (newM.type == "notify") {
-					this.emit(
-						"message",
-						newM.messages.map((m) => new Message(m, this)),
-					);
 				}
 			});
 	}
