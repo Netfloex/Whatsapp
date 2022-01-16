@@ -39,6 +39,5 @@ export interface ClientToServer {
 		message: AnyMessageContent & {
 			jid: string;
 		},
-		reply: (status: string) => void,
 	) => PromiseLike<void>;
 }

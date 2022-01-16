@@ -34,6 +34,7 @@ export class Message {
 		this.sender.contactName = client.store.data?.contacts?.find(
 			(c) => c.id == this.sender.id,
 		)?.name;
+
 		this.sender.pushname = this.fromMe
 			? client.store.data?.me?.name
 			: message.pushName;
@@ -43,9 +44,9 @@ export class Message {
 		// senderJid;
 
 		this.content =
-			message?.message?.conversation ??
-			message?.message?.extendedTextMessage?.text ??
-			message?.message?.imageMessage?.caption ??
+			message?.message?.conversation ||
+			message?.message?.extendedTextMessage?.text ||
+			message?.message?.imageMessage?.caption ||
 			undefined;
 	}
 

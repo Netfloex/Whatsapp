@@ -119,19 +119,22 @@ export class Client extends EventEmitter {
 				this.store.data.contacts = contacts;
 				await this.store.write();
 			})
-			.on("messages.upsert", async (newM) => {
-				console.log("New Messages: ", newM);
+			.on("messages.upsert", async ({ messages: msgs, type }) => {
+				const messages = msgs
+					.filter(this.filterMessages, this)
+					.map((m) => new Message(m, this));
+				console.log(`New Messages ${type} : `, messages);
 
-				if (newM.type == "notify") {
-					const messages = newM.messages
-						.filter(this.filterMessages, this)
-						.map((m) => new Message(m, this));
-
-					messages.length && this.emit("message", messages);
+				if (!messages.length) {
+					return console.log("All messages filtered: ", msgs);
 				}
-				if (["append", "notify", "prepend"].includes(newM.type)) {
+
+				if (["append", "notify"].includes(type)) {
+					this.emit("message", messages);
+				}
+				if (["append", "notify", "prepend"].includes(type)) {
 					this.store.data.messages?.unshift(
-						...newM.messages.filter(this.filterMessages, this),
+						...msgs.filter(this.filterMessages, this),
 					);
 
 					await this.store.write();
