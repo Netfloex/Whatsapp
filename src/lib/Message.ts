@@ -29,7 +29,9 @@ export class Message {
 
 		this.sender.id = this.fromMe
 			? client.store.data?.me?.id
-			: message.participant ?? message.key.remoteJid;
+			: message.participant ??
+			  message.key.participant ??
+			  message.key.remoteJid;
 
 		this.sender.contactName = client.store.data?.contacts?.find(
 			(c) => c.id == this.sender.id,

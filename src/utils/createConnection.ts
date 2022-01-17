@@ -6,9 +6,11 @@ import { ensureDir } from "fs-extra";
 import { dirname } from "path";
 import P from "pino";
 
-export const createConnection = async (authFile: string): Promise<Socket> => {
-	await ensureDir(dirname(authFile));
-	const { state, saveState } = useSingleFileAuthState(authFile);
+import { Client } from "@lib";
+
+export const createConnection = async (client: Client): Promise<Socket> => {
+	await ensureDir(dirname(client.authFile));
+	const { state, saveState } = useSingleFileAuthState(client.authFile);
 
 	const c = makeConnection({
 		auth: state,

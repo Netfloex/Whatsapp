@@ -9,6 +9,10 @@ export class SocketIO {
 	io: Server<ClientToServer, ServerToClient>;
 	app: Application;
 
+	get size(): number {
+		return this.io.of("/").sockets.size;
+	}
+
 	private client: Client;
 
 	constructor(client: Client) {
@@ -29,19 +33,20 @@ export class SocketIO {
 				messages.map((msg) => msg.toJSON()),
 			);
 		});
+
 		this.io.on("connection", (sock) => {
+			this.onConnectionChange();
 			sock.on("disconnect", () => {
+				this.onConnectionChange();
 				console.log(
 					`Disconnected: ${sock.id.slice(0, 4)}, Clients: ${
-						this.io.of("/").sockets.size
+						this.size
 					}`,
 				);
 			});
 
 			console.log(
-				`Connection: ${sock.id.slice(0, 4)}, Clients: ${
-					this.io.engine.clientsCount
-				}`,
+				`Connection: ${sock.id.slice(0, 4)}, Clients: ${this.size}`,
 			);
 			sock.onAny((ev, data) => {
 				console.log(
@@ -61,6 +66,10 @@ export class SocketIO {
 			});
 		});
 		server.listen(3000);
+	}
+
+	private onConnectionChange(): void {
+		this.client.emit("connections.size", this.size);
 	}
 
 	private handleAuthentication(): void {

@@ -22,6 +22,7 @@ export class Client extends EventEmitter {
 	socket?: Socket;
 	io: SocketIO;
 	store = new Store<Stored>(joinData("store.json"), {});
+	whatsappTimeout: NodeJS.Timeout | undefined;
 
 	get chats(): ChatJson[] {
 		return (
@@ -33,17 +34,55 @@ export class Client extends EventEmitter {
 		);
 	}
 
-	private authFile: string;
+	authFile: string;
 
 	constructor(authFile: string) {
 		super();
 		this.authFile = authFile;
 		this.io = new SocketIO(this);
+
+		this.on("connections.size", (size) => {
+			console.log(`Size: ${size}`);
+		});
 	}
 
 	async init(): Promise<void> {
 		await this.store.init();
 		await this.createConnection();
+
+		this.handleWhatsappTimeout();
+
+		console.log(
+			this.store.data.chats
+				?.map((chat) => new Chat(chat, this))
+				.sort((a, b) => b.time.toMillis() - a.time.toMillis())
+				.slice(0, 100),
+		);
+	}
+
+	private handleWhatsappTimeout(): void {
+		const timeoutDuration =
+			parseInt(process.env.HIBERNATE ?? "NaN") || 60_000;
+
+		this.whatsappTimeout = setTimeout(() => {
+			if (!this.io.size) {
+				console.log("No active connections, stopping socket");
+
+				this.socket?.end(
+					new Boom("Timeout", { data: { reconnect: false } }),
+				);
+				delete this.socket;
+			}
+		}, timeoutDuration);
+		this.on("connections.size", async (size) => {
+			if (size == 0) {
+				this.whatsappTimeout?.refresh();
+			} else {
+				console.log("Connection activated, opening socket");
+
+				await this.createConnection();
+			}
+		});
 	}
 
 	filterMessages(msg: WAMessage): boolean {
@@ -75,10 +114,12 @@ export class Client extends EventEmitter {
 		if (this.socket) {
 			console.log("Ending old Socket");
 
-			this.socket.end(new Error("Reconnecting"));
+			this.socket.end(
+				new Boom("Reconnecting", { data: { reconnect: false } }),
+			);
 		}
 
-		this.socket = await createConnection(this.authFile);
+		this.socket = await createConnection(this);
 
 		if (this.socket?.user?.name) {
 			this.store.data.me = {
@@ -94,10 +135,11 @@ export class Client extends EventEmitter {
 
 		this.socket.ev
 			.on("connection.update", async ({ connection, lastDisconnect }) => {
-				if (connection == "close") {
+				const last = lastDisconnect?.error as Boom;
+
+				if (last?.data?.reconnect != false && connection == "close") {
 					if (
-						(lastDisconnect?.error as Boom)?.output?.statusCode ==
-						DisconnectReason.loggedOut
+						last?.output?.statusCode == DisconnectReason.loggedOut
 					) {
 						console.log("Logged Out!");
 						await remove(this.authFile);
