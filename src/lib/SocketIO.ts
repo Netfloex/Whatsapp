@@ -59,6 +59,10 @@ export class SocketIO {
 				reply(this.client.chats.slice(0, 40));
 			});
 
+			sock.on("messages.for", ({ chatId, length }, reply) => {
+				reply(this.client.messagesFor(chatId, length));
+			});
+
 			sock.on("message.send", async ({ jid, ...content }) => {
 				console.log(`Send a message to ${jid}`);
 

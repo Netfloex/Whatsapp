@@ -31,7 +31,6 @@ export type ChatJson = {
 	id: string;
 	name: string;
 	time: string;
-	messages: MessageJson[];
 	unreadCount?: number;
 	isGroup: boolean;
 };
@@ -49,7 +48,15 @@ export interface ClientToServer {
 		message: AnyMessageContent & {
 			jid: string;
 		},
-	) => PromiseLike<void>;
+	) => void;
 
-	"presence.subscribe": (jid: string) => PromiseLike<void>;
+	"messages.for": (
+		data: {
+			chatId: string;
+			length?: number;
+		},
+		reply: (messages: MessageJson[]) => void,
+	) => void;
+
+	"presence.subscribe": (jid: string) => void;
 }

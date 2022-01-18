@@ -6,7 +6,7 @@ import {
 } from "@adiwajshing/baileys-md";
 import { Boom } from "@hapi/boom";
 import { Socket } from "@typings/Baileys";
-import { ChatJson } from "@typings/SocketIO";
+import { ChatJson, MessageJson } from "@typings/SocketIO";
 import { Stored } from "@typings/Stored";
 import { remove } from "fs-extra";
 import { join } from "path";
@@ -24,6 +24,8 @@ export class Client extends EventEmitter {
 	store = new Store<Stored>(joinData("store.json"), {});
 	whatsappTimeout: NodeJS.Timeout | undefined;
 
+	authFile: string;
+
 	get chats(): ChatJson[] {
 		return (
 			this.store.data.chats
@@ -34,7 +36,16 @@ export class Client extends EventEmitter {
 		);
 	}
 
-	authFile: string;
+	messagesFor(chatId: string, length?: number): MessageJson[] {
+		return (
+			this.store.data.messages
+				?.filter((msg) => msg.key.remoteJid == chatId)
+				.map((msg) => new Message(msg, this))
+				.sort((a, b) => b.time.valueOf() - a.time.valueOf())
+				.slice(0, length)
+				.map((msg) => msg.toJSON()) ?? []
+		);
+	}
 
 	constructor(authFile: string) {
 		super();
