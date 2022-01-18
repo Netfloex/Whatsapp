@@ -188,8 +188,28 @@ export class Client extends EventEmitter {
 			.on("presence.update", (presence) => {
 				this.io.io.emit("presence", presence);
 			})
-			.on("chats.update", (chats) => {
+			.on("chats.update", async (chats) => {
+				chats.forEach((chat) => {
+					const foundChat = this.store.data.chats?.find(
+						(ch) => chat.id == ch.id,
+					);
+
+					if (foundChat) {
+						if (chat.archive) foundChat.archive = chat.archive;
+
+						if (chat.conversationTimestamp) {
+							foundChat.conversationTimestamp =
+								chat.conversationTimestamp;
+						}
+
+						if (chat.unreadCount)
+							foundChat.unreadCount = chat.unreadCount;
+					}
+				});
+
 				this.io.io.emit("chats.update", chats);
+
+				await this.store.write();
 			});
 	}
 }

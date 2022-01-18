@@ -16,7 +16,7 @@ export class Chat {
 	unreadCount?: number;
 	isGroup: boolean;
 
-	constructor(chat: BaileysChat, client: Client) {
+	constructor(chat: BaileysChat | WAChat, client: Client) {
 		this.wa = chat;
 
 		this.id = chat.id;
@@ -27,7 +27,9 @@ export class Chat {
 			chat.id;
 
 		this.time = parseTimestamp(
-			(chat as WAChat)?.conversationTimestamp?.low,
+			typeof chat.conversationTimestamp == "object"
+				? chat.conversationTimestamp?.low
+				: chat.conversationTimestamp,
 		);
 
 		this.unreadCount = chat.unreadCount ?? undefined;
