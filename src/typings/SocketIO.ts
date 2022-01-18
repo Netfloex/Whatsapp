@@ -1,7 +1,14 @@
 import type {
 	AnyMessageContent,
+	Chat,
+	PresenceData,
 	WAMessageContent,
 } from "@adiwajshing/baileys-md";
+
+export type PresenceUpdate = {
+	id: string;
+	presences: { [participant: string]: PresenceData };
+};
 
 export type Person = {
 	id?: string | null;
@@ -26,10 +33,13 @@ export type ChatJson = {
 	time: string;
 	messages: MessageJson[];
 	unreadCount?: number;
+	isGroup: boolean;
 };
 
 export interface ServerToClient {
-	message: (data: MessageJson[]) => void;
+	message: (messages: MessageJson[]) => void;
+	presence: (presence: PresenceUpdate) => void;
+	"chats.update": (chats: Partial<Chat>[]) => void;
 }
 
 export interface ClientToServer {
@@ -40,4 +50,6 @@ export interface ClientToServer {
 			jid: string;
 		},
 	) => PromiseLike<void>;
+
+	"presence.subscribe": (jid: string) => PromiseLike<void>;
 }

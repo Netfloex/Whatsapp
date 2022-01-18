@@ -1,4 +1,4 @@
-import { Chat as BaileysChat } from "@adiwajshing/baileys-md";
+import { Chat as BaileysChat, isJidGroup } from "@adiwajshing/baileys-md";
 import { WAChat } from "@typings/Baileys";
 import { ChatJson, MessageJson } from "@typings/SocketIO";
 import { pick } from "lodash";
@@ -16,6 +16,7 @@ export class Chat extends EventEmitter {
 	time: DateTime;
 	messages: MessageJson[];
 	unreadCount?: number;
+	isGroup: boolean;
 
 	constructor(chat: BaileysChat, client: Client) {
 		super();
@@ -40,10 +41,12 @@ export class Chat extends EventEmitter {
 			: parseTimestamp((chat as WAChat)?.conversationTimestamp?.low);
 
 		this.unreadCount = chat.unreadCount ?? undefined;
+
+		this.isGroup = isJidGroup(this.id);
 	}
 	toJSON(): ChatJson {
 		return {
-			...pick(this, "id", "name", "unreadCount", "messages"),
+			...pick(this, "id", "name", "unreadCount", "messages", "isGroup"),
 			time: this.time.toJSON(),
 		};
 	}

@@ -40,10 +40,6 @@ export class Client extends EventEmitter {
 		super();
 		this.authFile = authFile;
 		this.io = new SocketIO(this);
-
-		this.on("connections.size", (size) => {
-			console.log(`Size: ${size}`);
-		});
 	}
 
 	async init(): Promise<void> {
@@ -51,13 +47,6 @@ export class Client extends EventEmitter {
 		await this.createConnection();
 
 		this.handleWhatsappTimeout();
-
-		console.log(
-			this.store.data.chats
-				?.map((chat) => new Chat(chat, this))
-				.sort((a, b) => b.time.toMillis() - a.time.toMillis())
-				.slice(0, 100),
-		);
 	}
 
 	private handleWhatsappTimeout(): void {
@@ -74,13 +63,16 @@ export class Client extends EventEmitter {
 				delete this.socket;
 			}
 		}, timeoutDuration);
+
 		this.on("connections.size", async (size) => {
 			if (size == 0) {
 				this.whatsappTimeout?.refresh();
 			} else {
-				console.log("Connection activated, opening socket");
+				if (!this.socket) {
+					console.log("Connection activated, opening socket");
 
-				await this.createConnection();
+					await this.createConnection();
+				}
 			}
 		});
 	}
@@ -181,6 +173,12 @@ export class Client extends EventEmitter {
 
 					await this.store.write();
 				}
+			})
+			.on("presence.update", (presence) => {
+				this.io.io.emit("presence", presence);
+			})
+			.on("chats.update", (chats) => {
+				this.io.io.emit("chats.update", chats);
 			});
 	}
 }

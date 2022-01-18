@@ -49,7 +49,9 @@ export class Message {
 			message?.message?.conversation ||
 			message?.message?.extendedTextMessage?.text ||
 			message?.message?.imageMessage?.caption ||
-			undefined;
+			(message?.message?.imageMessage != undefined
+				? "📷 Photo"
+				: undefined);
 	}
 
 	toJSON(): MessageJson {
