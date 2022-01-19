@@ -58,5 +58,8 @@ export interface ClientToServer {
 		reply: (messages: MessageJson[]) => void,
 	) => void;
 
-	"presence.subscribe": (jid: string) => void;
+	"presence.subscribe": (
+		jid: string,
+		reply: (data: PresenceData | undefined) => void,
+	) => void;
 }

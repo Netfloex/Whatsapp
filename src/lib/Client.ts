@@ -6,7 +6,7 @@ import {
 } from "@adiwajshing/baileys-md";
 import { Boom } from "@hapi/boom";
 import { Socket } from "@typings/Baileys";
-import { ChatJson, MessageJson } from "@typings/SocketIO";
+import { ChatJson, MessageJson, PresenceUpdate } from "@typings/SocketIO";
 import { Stored } from "@typings/Stored";
 import { remove } from "fs-extra";
 import { join } from "path";
@@ -23,6 +23,7 @@ export class Client extends EventEmitter {
 	io: SocketIO;
 	store = new Store<Stored>(joinData("store.json"), {});
 	whatsappTimeout: NodeJS.Timeout | undefined;
+	presences: PresenceUpdate["presences"] = {};
 
 	authFile: string;
 
@@ -185,8 +186,14 @@ export class Client extends EventEmitter {
 					await this.store.write();
 				}
 			})
-			.on("presence.update", (presence) => {
-				this.io.io.emit("presence", presence);
+			.on("presence.update", (presences) => {
+				this.presences = {
+					...this.presences,
+					...presences.presences,
+				};
+				console.log(this.presences);
+
+				this.io.io.emit("presence", presences);
 			})
 			.on("chats.update", async (chats) => {
 				chats.forEach((chat) => {

@@ -69,8 +69,10 @@ export class SocketIO {
 				await this.client.socket?.sendMessage(jid, content);
 			});
 
-			sock.on("presence.subscribe", async (id: string) => {
+			sock.on("presence.subscribe", async (id, reply) => {
 				await this.client.socket?.presenceSubscribe(id);
+
+				reply(this.client.presences[id]);
 			});
 		});
 		server.listen(3000);
