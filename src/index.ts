@@ -7,11 +7,10 @@ console.clear();
 
 config();
 
-const authFile = join(process.cwd(), "data", "auth.json");
+const dataDir = join(process.cwd(), "data");
 
 const main = async (): Promise<void> => {
-	const client = new Client(authFile);
-
+	const client = new Client(dataDir);
 	await client.init();
 };
 

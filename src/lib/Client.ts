@@ -12,20 +12,27 @@ import { remove } from "fs-extra";
 import { join } from "path";
 import { EventEmitter } from "stream";
 
-import { Chat, Message, SocketIO, Store } from "@lib";
+import { Chat, Database, Message, SocketIO, Store } from "@lib";
 import { createConnection } from "@utils";
 
-const joinData = (...paths: string[]): string =>
-	join(process.cwd(), "data", ...paths);
+// const joinData = (...paths: string[]): string =>
+// 	join(process.cwd(), "data", ...paths);
 
 export class Client extends EventEmitter {
 	socket?: Socket;
 	io: SocketIO;
-	store = new Store<Stored>(joinData("store.json"), {});
+	store;
 	whatsappTimeout: NodeJS.Timeout | undefined;
 	presences: PresenceUpdate["presences"] = {};
+	db;
+	dataDir: string;
 
-	authFile: string;
+	get authFile(): string {
+		return join(this.dataDir, "auth.json");
+	}
+	get storeFile(): string {
+		return join(this.dataDir, "store.json");
+	}
 
 	get chats(): ChatJson[] {
 		return (
@@ -48,22 +55,25 @@ export class Client extends EventEmitter {
 		);
 	}
 
-	constructor(authFile: string) {
+	constructor(dataDir: string) {
 		super();
-		this.authFile = authFile;
+		this.dataDir = dataDir;
 		this.io = new SocketIO(this);
+		this.store = new Store<Stored>(this.storeFile, {});
+		this.db = new Database("data/store.db");
 	}
 
 	async init(): Promise<void> {
 		await this.store.init();
 		await this.createConnection();
+		await this.db.init();
 
 		this.handleWhatsappTimeout();
 	}
 
 	private handleWhatsappTimeout(): void {
 		const timeoutDuration =
-			parseInt(process.env.HIBERNATE ?? "NaN") || 60_000;
+			parseInt(process.env.HIBERNATE ?? "NaN") || 120_000;
 
 		this.whatsappTimeout = setTimeout(() => {
 			if (!this.io.size) {
@@ -154,21 +164,34 @@ export class Client extends EventEmitter {
 				}
 			})
 			.on("chats.set", async ({ chats, messages }) => {
-				this.store.data.messages = messages.filter(
-					this.filterMessages,
-					this,
-				);
-				this.store.data.chats = chats;
-				await this.store.write();
+				const chatsJson = chats
+					?.reverse()
+					?.map((chat) => new Chat(chat, this))
+					.map((chat) => chat.toJSON());
+
+				const messagesJson = messages
+					?.filter(this.filterMessages, this)
+					.map((msg) => new Message(msg, this).toJSON());
+
+				console.log("Chats & messages", chatsJson, messagesJson);
+
+				console.log(chatsJson?.length, messagesJson?.length);
+
+				if (chatsJson?.length)
+					await this.db.batchInsert(this.db.knex("chats"), chatsJson);
+				if (messagesJson?.length)
+					await this.db.batchInsert(
+						this.db.knex("messages"),
+						messagesJson,
+					);
 			})
 			.on("contacts.upsert", async (contacts) => {
-				this.store.data.contacts = contacts;
-				await this.store.write();
+				await this.db.batchInsert(this.db.knex("contacts"), contacts);
 			})
 			.on("messages.upsert", async ({ messages: msgs, type }) => {
 				const messages = msgs
 					.filter(this.filterMessages, this)
-					.map((m) => new Message(m, this));
+					.map((m) => new Message(m, this).toJSON());
 				console.log(`New Messages ${type} : `, messages);
 
 				if (!messages.length) {
@@ -179,11 +202,19 @@ export class Client extends EventEmitter {
 					this.emit("message", messages);
 				}
 				if (["append", "notify", "prepend"].includes(type)) {
-					this.store.data.messages?.unshift(
-						...msgs.filter(this.filterMessages, this),
-					);
+					// this.store.data.messages?.unshift(
+					// 	...msgs.filter(this.filterMessages, this),
+					// );
 
-					await this.store.write();
+					// await this.store.write();
+					await this.db.batchInsert(
+						this.db.knex("messages"),
+						messages,
+					);
+					// .insert(messages)
+
+					// .onConflict("id")
+					// .merge();
 				}
 			})
 			.on("presence.update", (presences) => {
@@ -211,6 +242,8 @@ export class Client extends EventEmitter {
 
 						if (chat.unreadCount)
 							foundChat.unreadCount = chat.unreadCount;
+
+						if (chat.name) foundChat.name = chat.name;
 					}
 				});
 

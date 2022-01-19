@@ -1,9 +1,9 @@
-import { ClientToServer, ServerToClient } from "@typings/SocketIO";
+import { ClientToServer, MessageJson, ServerToClient } from "@typings/SocketIO";
 import express, { Application } from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
-import { Client, Message } from "@lib";
+import { Client } from "@lib";
 
 export class SocketIO {
 	io: Server<ClientToServer, ServerToClient>;
@@ -27,11 +27,8 @@ export class SocketIO {
 			res.json(this.client.chats.slice(0, 10));
 		});
 
-		this.client.on("message", (messages: Message[]) => {
-			this.io.sockets.emit(
-				"message",
-				messages.map((msg) => msg.toJSON()),
-			);
+		this.client.on("message", (messages: MessageJson[]) => {
+			this.io.sockets.emit("message", messages);
 		});
 
 		this.io.on("connection", (sock) => {
