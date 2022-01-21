@@ -1,4 +1,9 @@
-import { ClientToServer, MessageJson, ServerToClient } from "@typings/SocketIO";
+import {
+	ClientToServer,
+	DBContact,
+	MessageJson,
+	ServerToClient,
+} from "@typings/SocketIO";
 import express, { Application } from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -53,6 +58,8 @@ export class SocketIO {
 			});
 
 			sock.on("messages.for", async ({ chatId, length }, reply) => {
+				console.log(await this.client.messagesFor(chatId, length));
+
 				reply(await this.client.messagesFor(chatId, length));
 			});
 
@@ -65,7 +72,13 @@ export class SocketIO {
 			sock.on("presence.subscribe", async (id, reply) => {
 				await this.client.socket?.presenceSubscribe(id);
 
-				reply(this.client.presences[id]);
+				reply(
+					(await this.client.db
+						.knex("contacts")
+						.first()
+						.where({ id })
+						.select()) as DBContact,
+				);
 			});
 		});
 		server.listen(3000);

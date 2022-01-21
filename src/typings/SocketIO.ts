@@ -1,12 +1,12 @@
-import type {
-	AnyMessageContent,
-	Chat,
-	PresenceData,
-} from "@adiwajshing/baileys-md";
+import type { AnyMessageContent, Chat } from "@adiwajshing/baileys-md";
 
-export type PresenceUpdate = {
-	id: string;
-	presences: { [participant: string]: PresenceData };
+export type DBContact = {
+	id?: string;
+	name?: string;
+	notify?: string;
+	isMe?: 0 | 1;
+	presence?: string;
+	presenceUpdated?: string;
 };
 
 export type MessageJson = {
@@ -29,7 +29,7 @@ export type ChatJson = {
 
 export interface ServerToClient {
 	message: (messages: MessageJson[]) => void;
-	presence: (presence: PresenceUpdate) => void;
+	presence: (presences: DBContact[]) => void;
 	"chats.update": (chats: Partial<Chat>[]) => void;
 }
 
@@ -52,6 +52,6 @@ export interface ClientToServer {
 
 	"presence.subscribe": (
 		jid: string,
-		reply: (data: PresenceData | undefined) => void,
+		reply: (data: DBContact) => void,
 	) => void;
 }

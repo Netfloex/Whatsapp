@@ -7,17 +7,29 @@ const getSenderId = (message: WAMessage): string | undefined => {
 	if (message.key.fromMe) return "me";
 
 	const senderId =
-		message.participant ??
-		message.key.participant ??
-		message.key.remoteJid ??
+		message.participant ||
+		message.key.participant ||
+		message.key.remoteJid ||
 		undefined;
+	let i: string | undefined;
 
 	try {
-		return senderId && jidNormalizedUser(senderId);
+		i = senderId && jidNormalizedUser(senderId);
 	} catch (error) {
 		console.log(error);
 		console.log(message);
 	}
+
+	if (!i)
+		console.log(
+			"SENderid Undefined",
+			`-${senderId}-`,
+			message.participant,
+			message.key.participant,
+			message.key.remoteJid,
+		);
+
+	return i;
 };
 
 export const Message = (message: WAMessage): MessageJson => ({

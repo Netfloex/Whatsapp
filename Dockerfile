@@ -3,7 +3,7 @@ ARG NODE_IMAGE=node:12-alpine
 FROM $NODE_IMAGE AS deps
 WORKDIR /app
 
-RUN apk add --no-cache git
+RUN apk add --no-cache git python3
 
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
@@ -11,7 +11,7 @@ RUN yarn install --frozen-lockfile
 FROM $NODE_IMAGE AS builder
 WORKDIR /app
 
-RUN apk add --no-cache git
+RUN apk add --no-cache git python3
 
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules

@@ -1,23 +1,23 @@
 import {
 	DisconnectReason,
+	isJidUser,
 	WAMessage,
 	WAMessageStubType,
 } from "@adiwajshing/baileys-md";
 import { Boom } from "@hapi/boom";
 import { Socket } from "@typings/Baileys";
-import { ChatJson, MessageJson, PresenceUpdate } from "@typings/SocketIO";
+import { ChatJson, MessageJson } from "@typings/SocketIO";
 import { remove } from "fs-extra";
 import { join } from "path";
 import { EventEmitter } from "stream";
 
-import { Chat, Database, Message, SocketIO } from "@lib";
+import { Chat, Database, Message, Presences, SocketIO } from "@lib";
 import { createConnection } from "@utils";
 
 export class Client extends EventEmitter {
 	socket?: Socket;
 	io: SocketIO;
 	whatsappTimeout: NodeJS.Timeout | undefined;
-	presences: PresenceUpdate["presences"] = {};
 	db: Database;
 	dataDir: string;
 
@@ -57,7 +57,7 @@ export class Client extends EventEmitter {
 					(
 						await this.db
 							.knex("contacts")
-							.where({ isMe: true })
+							.where({ isMe: 1 })
 							.first()
 							.select()
 					).id,
@@ -152,6 +152,7 @@ export class Client extends EventEmitter {
 					) {
 						console.log("Logged Out!");
 						await remove(this.authFile);
+						return;
 					}
 					console.log("Reconnecting in 1 second");
 
@@ -190,13 +191,11 @@ export class Client extends EventEmitter {
 					await this.db.batchUpsert("messages", messages);
 				}
 			})
-			.on("presence.update", (presences) => {
-				this.presences = {
-					...this.presences,
-					...presences.presences,
-				};
+			.on("presence.update", async ({ id, presences }) => {
+				if (!isJidUser(id)) return;
 
-				this.io.io.emit("presence", presences);
+				await this.db.batchUpsert("contacts", Presences(presences));
+				this.io.io.emit("presence", Presences(presences));
 			})
 			.on("chats.update", async (chats) => {
 				this.io.io.emit("chats.update", chats);

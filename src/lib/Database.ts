@@ -48,7 +48,9 @@ export class Database {
 			table.string("id").unique();
 			table.string("name");
 			table.string("notify");
-			table.boolean("isMe").defaultTo(false);
+			table.boolean("isMe");
+			table.string("presence");
+			table.dateTime("presenceUpdated");
 		});
 	}
 

@@ -6,7 +6,7 @@
 	"scripts": {
 		"start": "node .",
 		"build": "rollup -c",
-		"dev": "tsnd --respawn -T --rs --cls --inspect --exit-child -r tsconfig-paths/register src",
+		"dev": "NODE_OPTIONS=\"--inspect\" ts-node -T -r tsconfig-paths/register src",
 		"lint": "eslint .",
 		"prepare": "tsc -p node_modules/@adiwajshing/baileys-md || exit 0 && husky install",
 		"typescript": "tsc && tsc-strict"
