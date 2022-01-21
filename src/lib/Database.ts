@@ -1,4 +1,5 @@
 import { Contact, jidNormalizedUser } from "@adiwajshing/baileys-md";
+import { ChatJson, DBContact, MessageJson } from "@typings/SocketIO";
 import { Knex, knex } from "knex";
 import { chunk } from "lodash";
 
@@ -80,5 +81,43 @@ export class Database {
 				isMe: true,
 			},
 		]);
+	}
+
+	async chats(length = 100): Promise<ChatJson[]> {
+		return await this.knex("chats")
+			.orderBy("time", "desc")
+			.leftOuterJoin("contacts", "contacts.id", "chats.id")
+			.limit(length)
+			.select(
+				"chats.*",
+				this.knex.raw("coalesce(??, ??) as name", [
+					"contacts.name",
+					"chats.name",
+				]),
+			);
+	}
+
+	async messagesFor(chatId: string, length = 100): Promise<MessageJson[]> {
+		return await this.knex("messages")
+			.where("chatId", chatId)
+			.orderBy("time", "desc")
+			.limit(length)
+			.select(
+				"*",
+				this.knex.raw("REPLACE(??, ?, ?) as senderId", [
+					"senderId",
+					"me",
+					(
+						await this.knex("contacts")
+							.where({ isMe: 1 })
+							.first()
+							.select()
+					).id,
+				]),
+			);
+	}
+
+	async getContact(id: string): Promise<DBContact> {
+		return await this.knex("contacts").where({ id }).first().select();
 	}
 }

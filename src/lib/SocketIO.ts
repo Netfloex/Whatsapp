@@ -1,9 +1,4 @@
-import {
-	ClientToServer,
-	DBContact,
-	MessageJson,
-	ServerToClient,
-} from "@typings/SocketIO";
+import { ClientToServer, MessageJson, ServerToClient } from "@typings/SocketIO";
 import express, { Application } from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -34,6 +29,10 @@ export class SocketIO {
 
 		this.io.on("connection", (sock) => {
 			this.onConnectionChange();
+			console.log(
+				`Connection: ${sock.id.slice(0, 4)}, Clients: ${this.size}`,
+			);
+
 			sock.on("disconnect", () => {
 				this.onConnectionChange();
 				console.log(
@@ -41,46 +40,44 @@ export class SocketIO {
 						this.size
 					}`,
 				);
-			});
+			})
 
-			console.log(
-				`Connection: ${sock.id.slice(0, 4)}, Clients: ${this.size}`,
-			);
-			sock.onAny((ev, data) => {
-				console.log(
-					`Socket: ${sock.id.slice(0, 4)}, event: ${ev}`,
-					data,
-				);
-			});
+				.onAny((ev, data) => {
+					console.log(
+						`Socket: ${sock.id.slice(0, 4)}, event: ${ev}`,
+						data,
+					);
+				})
 
-			sock.on("chats", async (reply) => {
-				reply(await this.client.chats(40));
-			});
+				.on("chats", async (reply) => {
+					reply(await this.client.db.chats(40));
+				})
 
-			sock.on("messages.for", async ({ chatId, length }, reply) => {
-				console.log(await this.client.messagesFor(chatId, length));
+				.on("messages.for", async ({ chatId, length }, reply) => {
+					console.log(
+						await this.client.db.messagesFor(chatId, length),
+					);
 
-				reply(await this.client.messagesFor(chatId, length));
-			});
+					reply(await this.client.db.messagesFor(chatId, length));
+				})
 
-			sock.on("message.send", async ({ jid, ...content }) => {
-				console.log(`Send a message to ${jid}`);
+				.on("contact", async (chatId, reply) => {
+					reply(await this.client.db.getContact(chatId));
+				})
 
-				await this.client.socket?.sendMessage(jid, content);
-			});
+				.on("message.send", async ({ jid, ...content }) => {
+					console.log(`Send a message to ${jid}`);
 
-			sock.on("presence.subscribe", async (id, reply) => {
-				await this.client.socket?.presenceSubscribe(id);
+					await this.client.socket?.sendMessage(jid, content);
+				})
 
-				reply(
-					(await this.client.db
-						.knex("contacts")
-						.first()
-						.where({ id })
-						.select()) as DBContact,
-				);
-			});
+				.on("presence.subscribe", async (id, reply) => {
+					await this.client.socket?.presenceSubscribe(id);
+
+					reply(await this.client.db.getContact(id));
+				});
 		});
+
 		server.listen(3000);
 	}
 

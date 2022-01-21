@@ -36,18 +36,20 @@ export interface ServerToClient {
 export interface ClientToServer {
 	chats: (reply: (chats: ChatJson[]) => void) => void;
 
-	"message.send": (
-		message: AnyMessageContent & {
-			jid: string;
-		},
-	) => void;
-
 	"messages.for": (
 		data: {
 			chatId: string;
 			length?: number;
 		},
 		reply: (messages: MessageJson[]) => void,
+	) => void;
+
+	contact: (chatId: string, reply: (contact: DBContact) => void) => void;
+
+	"message.send": (
+		message: AnyMessageContent & {
+			jid: string;
+		},
 	) => void;
 
 	"presence.subscribe": (

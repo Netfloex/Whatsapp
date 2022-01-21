@@ -6,7 +6,6 @@ import {
 } from "@adiwajshing/baileys-md";
 import { Boom } from "@hapi/boom";
 import { Socket } from "@typings/Baileys";
-import { ChatJson, MessageJson } from "@typings/SocketIO";
 import { remove } from "fs-extra";
 import { join } from "path";
 import { EventEmitter } from "stream";
@@ -26,43 +25,6 @@ export class Client extends EventEmitter {
 	}
 	get storeFile(): string {
 		return join(this.dataDir, "store.db");
-	}
-
-	async chats(length = 100): Promise<ChatJson[]> {
-		return await this.db
-			.knex("chats")
-			.orderBy("time", "desc")
-			.leftOuterJoin("contacts", "contacts.id", "chats.id")
-			.limit(length)
-			.select(
-				"chats.*",
-				this.db.knex.raw("coalesce(??, ??) as name", [
-					"contacts.name",
-					"chats.name",
-				]),
-			);
-	}
-
-	async messagesFor(chatId: string, length = 100): Promise<MessageJson[]> {
-		return await this.db
-			.knex("messages")
-			.where("chatId", chatId)
-			.orderBy("time", "desc")
-			.limit(length)
-			.select(
-				"*",
-				this.db.knex.raw("REPLACE(??, ?, ?) as senderId", [
-					"senderId",
-					"me",
-					(
-						await this.db
-							.knex("contacts")
-							.where({ isMe: 1 })
-							.first()
-							.select()
-					).id,
-				]),
-			);
 	}
 
 	constructor(dataDir: string) {
