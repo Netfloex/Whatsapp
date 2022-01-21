@@ -19,12 +19,14 @@ export default defineConfig({
 	},
 
 	preserveEntrySignatures: false,
-
+	external: ["knex"],
 	plugins: [
 		nodeResolve({ preferBuiltins: true }),
 		dev && run({ execArgv: ["--inspect"] }),
 		json(),
 		typescript(),
-		commonjs({ ignore: ["sharp", "jimp", "qrcode-terminal"] }),
+		commonjs({
+			ignore: ["sharp", "jimp", "qrcode-terminal"],
+		}),
 	],
 });

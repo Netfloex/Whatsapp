@@ -1,3 +1,4 @@
+import { Contact, jidNormalizedUser } from "@adiwajshing/baileys-md";
 import { Knex, knex } from "knex";
 import { chunk } from "lodash";
 
@@ -6,10 +7,11 @@ export class Database {
 
 	constructor(storeFile: string) {
 		this.knex = knex({
-			client: "sqlite3",
+			client: "better-sqlite3",
 			connection: {
 				filename: storeFile,
 			},
+
 			useNullAsDefault: true,
 		});
 	}
@@ -28,14 +30,15 @@ export class Database {
 			table.string("name");
 			table.dateTime("time");
 			table.integer("unreadCount");
-			table.boolean("isGroup");
+			table.boolean("archive");
+			table.boolean("muted");
 		});
 
 		await this.createTableIfNotExists("messages", (table) => {
 			table.string("id").unique();
 			table.dateTime("time");
 			table.json("message");
-			table.json("sender");
+			table.string("senderId");
 			table.boolean("fromMe");
 			table.string("chatId");
 			table.string("content");
@@ -45,17 +48,35 @@ export class Database {
 			table.string("id").unique();
 			table.string("name");
 			table.string("notify");
+			table.boolean("isMe").defaultTo(false);
 		});
 	}
 
-	async batchInsert<T extends Array<unknown>>(
-		builder: Knex.QueryBuilder,
-		data: T,
-	): Promise<void> {
+	async batchUpsert(tableName: Knex.TableNames, data: any[]): Promise<void> {
+		if (!data.length) return;
+
 		const chunked = chunk(data, 500);
 
 		for (const data of chunked) {
-			await builder.insert(data).onConflict("id").merge();
+			await this.knex.raw(
+				this.knex(tableName)
+					.insert(data)
+					.onConflict("id")
+					.merge()
+					.toQuery()
+					.replace(/excluded\.(`\w+`)/g, "coalesce($&, $1)"),
+			);
 		}
+	}
+
+	async addMe(me: Contact): Promise<void> {
+		await this.batchUpsert("contacts", [
+			{
+				id: jidNormalizedUser(me.id),
+				name: me.name,
+				notify: me.notify,
+				isMe: true,
+			},
+		]);
 	}
 }

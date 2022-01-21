@@ -1,71 +1,37 @@
-import { WAMessage, WAMessageContent } from "@adiwajshing/baileys-md";
-import { MessageJson, Person } from "@typings/SocketIO";
-import { pick } from "lodash";
-import { DateTime } from "luxon";
+import { jidNormalizedUser, WAMessage } from "@adiwajshing/baileys-md";
+import { MessageJson } from "@typings/SocketIO";
 
-import { Client } from "@lib";
 import { parseTimestamp } from "@utils";
 
-export class Message {
-	private wa?: WAMessage;
+const getSenderId = (message: WAMessage): string | undefined => {
+	if (message.key.fromMe) return "me";
 
-	id?: string;
-	time: DateTime;
-	message?: WAMessageContent;
-	sender: Person = {};
-	fromMe?: boolean;
-	chatId?: string;
+	const senderId =
+		message.participant ??
+		message.key.participant ??
+		message.key.remoteJid ??
+		undefined;
 
-	content?: string;
-
-	constructor(message: WAMessage, client: Client) {
-		this.wa = message;
-
-		this.id = message.key.id ?? undefined;
-		this.time = parseTimestamp(message.messageTimestamp);
-		this.message = message?.message ?? undefined;
-		this.chatId = message.key.remoteJid ?? undefined;
-		this.fromMe = message.key.fromMe ?? undefined;
-
-		this.sender.id = this.fromMe
-			? client.store.data?.me?.id
-			: message.participant ??
-			  message.key.participant ??
-			  message.key.remoteJid;
-
-		this.sender.contactName = client.store.data?.contacts?.find(
-			(c) => c.id == this.sender.id,
-		)?.name;
-
-		this.sender.pushname = this.fromMe
-			? client.store.data?.me?.name
-			: message.pushName;
-
-		//  ??
-		// (message.key.fromMe ? "You" : message.pushName) ??
-		// senderJid;
-
-		this.content =
-			message?.message?.conversation ||
-			message?.message?.extendedTextMessage?.text ||
-			message?.message?.imageMessage?.caption ||
-			(message?.message?.imageMessage != undefined
-				? "📷 Photo"
-				: undefined);
+	try {
+		return senderId && jidNormalizedUser(senderId);
+	} catch (error) {
+		console.log(error);
+		console.log(message);
 	}
+};
 
-	toJSON(): MessageJson {
-		return {
-			...pick(
-				this,
-				"id",
-				"message",
-				"sender",
-				"fromMe",
-				"chatId",
-				"content",
-			),
-			time: this.time.toJSON(),
-		};
-	}
-}
+export const Message = (message: WAMessage): MessageJson => ({
+	id: message.key.id!,
+	time: parseTimestamp(message.messageTimestamp),
+	message: JSON.stringify(message?.message),
+	chatId: message.key.remoteJid ?? undefined,
+	fromMe: message.key.fromMe ?? undefined,
+
+	senderId: getSenderId(message),
+
+	content:
+		message?.message?.conversation ||
+		message?.message?.extendedTextMessage?.text ||
+		message?.message?.imageMessage?.caption ||
+		(message?.message?.imageMessage != undefined ? "📷 Photo" : undefined),
+});

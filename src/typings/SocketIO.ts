@@ -2,7 +2,6 @@ import type {
 	AnyMessageContent,
 	Chat,
 	PresenceData,
-	WAMessageContent,
 } from "@adiwajshing/baileys-md";
 
 export type PresenceUpdate = {
@@ -10,17 +9,11 @@ export type PresenceUpdate = {
 	presences: { [participant: string]: PresenceData };
 };
 
-export type Person = {
-	id?: string | null;
-	pushname?: string | null;
-	contactName?: string;
-};
-
 export type MessageJson = {
-	id?: string;
-	time: string;
-	message?: WAMessageContent;
-	sender?: Person;
+	id: string;
+	time?: string;
+	message?: string;
+	senderId?: string;
 	fromMe?: boolean;
 	chatId?: string;
 
@@ -29,10 +22,9 @@ export type MessageJson = {
 
 export type ChatJson = {
 	id: string;
-	name: string;
-	time: string;
+	name?: string;
+	time?: string;
 	unreadCount?: number;
-	isGroup: boolean;
 };
 
 export interface ServerToClient {

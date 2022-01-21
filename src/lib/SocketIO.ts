@@ -23,10 +23,6 @@ export class SocketIO {
 
 		this.handleAuthentication();
 
-		this.app.get("/", (req, res) => {
-			res.json(this.client.chats.slice(0, 10));
-		});
-
 		this.client.on("message", (messages: MessageJson[]) => {
 			this.io.sockets.emit("message", messages);
 		});
@@ -52,12 +48,12 @@ export class SocketIO {
 				);
 			});
 
-			sock.on("chats", (reply) => {
-				reply(this.client.chats.slice(0, 40));
+			sock.on("chats", async (reply) => {
+				reply(await this.client.chats(40));
 			});
 
-			sock.on("messages.for", ({ chatId, length }, reply) => {
-				reply(this.client.messagesFor(chatId, length));
+			sock.on("messages.for", async ({ chatId, length }, reply) => {
+				reply(await this.client.messagesFor(chatId, length));
 			});
 
 			sock.on("message.send", async ({ jid, ...content }) => {

@@ -1,16 +1,16 @@
-import { Contact } from "@adiwajshing/baileys-md";
 import { ChatJson, MessageJson } from "@typings/SocketIO";
 
-export type Me = {
+type DBContact = {
 	id?: string;
 	name?: string;
+	notify?: string;
+	isMe?: boolean;
 };
 
 declare module "knex/types/tables" {
 	interface Tables {
 		chats?: ChatJson;
 		messages?: MessageJson;
-		contacts?: Contact;
-		me?: Me;
+		contacts?: DBContact;
 	}
 }

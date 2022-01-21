@@ -1,70 +1,78 @@
 import {
 	DisconnectReason,
-	jidNormalizedUser,
 	WAMessage,
 	WAMessageStubType,
 } from "@adiwajshing/baileys-md";
 import { Boom } from "@hapi/boom";
 import { Socket } from "@typings/Baileys";
 import { ChatJson, MessageJson, PresenceUpdate } from "@typings/SocketIO";
-import { Stored } from "@typings/Stored";
 import { remove } from "fs-extra";
 import { join } from "path";
 import { EventEmitter } from "stream";
 
-import { Chat, Database, Message, SocketIO, Store } from "@lib";
+import { Chat, Database, Message, SocketIO } from "@lib";
 import { createConnection } from "@utils";
-
-// const joinData = (...paths: string[]): string =>
-// 	join(process.cwd(), "data", ...paths);
 
 export class Client extends EventEmitter {
 	socket?: Socket;
 	io: SocketIO;
-	store;
 	whatsappTimeout: NodeJS.Timeout | undefined;
 	presences: PresenceUpdate["presences"] = {};
-	db;
+	db: Database;
 	dataDir: string;
 
 	get authFile(): string {
 		return join(this.dataDir, "auth.json");
 	}
 	get storeFile(): string {
-		return join(this.dataDir, "store.json");
+		return join(this.dataDir, "store.db");
 	}
 
-	get chats(): ChatJson[] {
-		return (
-			this.store.data.chats
-				?.map((chat) => new Chat(chat, this))
-				.sort((a, b) => b.time.toMillis() - a.time.toMillis())
-				.slice(0, 100)
-				.map((chat) => chat.toJSON()) ?? []
-		);
+	async chats(length = 100): Promise<ChatJson[]> {
+		return await this.db
+			.knex("chats")
+			.orderBy("time", "desc")
+			.leftOuterJoin("contacts", "contacts.id", "chats.id")
+			.limit(length)
+			.select(
+				"chats.*",
+				this.db.knex.raw("coalesce(??, ??) as name", [
+					"contacts.name",
+					"chats.name",
+				]),
+			);
 	}
 
-	messagesFor(chatId: string, length?: number): MessageJson[] {
-		return (
-			this.store.data.messages
-				?.filter((msg) => msg.key.remoteJid == chatId)
-				.map((msg) => new Message(msg, this))
-				.sort((a, b) => b.time.valueOf() - a.time.valueOf())
-				.slice(0, length)
-				.map((msg) => msg.toJSON()) ?? []
-		);
+	async messagesFor(chatId: string, length = 100): Promise<MessageJson[]> {
+		return await this.db
+			.knex("messages")
+			.where("chatId", chatId)
+			.orderBy("time", "desc")
+			.limit(length)
+			.select(
+				"*",
+				this.db.knex.raw("REPLACE(??, ?, ?) as senderId", [
+					"senderId",
+					"me",
+					(
+						await this.db
+							.knex("contacts")
+							.where({ isMe: true })
+							.first()
+							.select()
+					).id,
+				]),
+			);
 	}
 
 	constructor(dataDir: string) {
 		super();
 		this.dataDir = dataDir;
 		this.io = new SocketIO(this);
-		this.store = new Store<Stored>(this.storeFile, {});
-		this.db = new Database("data/store.db");
+		this.db = new Database(this.storeFile);
 	}
 
 	async init(): Promise<void> {
-		await this.store.init();
 		await this.createConnection();
 		await this.db.init();
 
@@ -112,13 +120,6 @@ export class Client extends EventEmitter {
 		)
 			return false;
 
-		if (
-			this.store.data.messages?.find(
-				(message) => message.key.id == msg.key.id,
-			)
-		)
-			return false;
-
 		return true;
 	}
 
@@ -136,15 +137,9 @@ export class Client extends EventEmitter {
 		this.socket = await createConnection(this);
 
 		if (this.socket?.user?.name) {
-			this.store.data.me = {
-				id:
-					this.socket?.user?.id &&
-					jidNormalizedUser(this.socket.user.id),
-				name: this.socket?.user?.name,
-			};
-			await this.store.write();
+			await this.db.addMe(this.socket.user);
 
-			console.log(`Logged in with: ${this.store.data.me.name}`);
+			console.log(`Logged in with: ${this.socket?.user?.name}`);
 		}
 
 		this.socket.ev
@@ -164,57 +159,35 @@ export class Client extends EventEmitter {
 				}
 			})
 			.on("chats.set", async ({ chats, messages }) => {
-				const chatsJson = chats
-					?.reverse()
-					?.map((chat) => new Chat(chat, this))
-					.map((chat) => chat.toJSON());
+				await this.db.batchUpsert("chats", chats?.map(Chat));
 
-				const messagesJson = messages
-					?.filter(this.filterMessages, this)
-					.map((msg) => new Message(msg, this).toJSON());
-
-				console.log("Chats & messages", chatsJson, messagesJson);
-
-				console.log(chatsJson?.length, messagesJson?.length);
-
-				if (chatsJson?.length)
-					await this.db.batchInsert(this.db.knex("chats"), chatsJson);
-				if (messagesJson?.length)
-					await this.db.batchInsert(
-						this.db.knex("messages"),
-						messagesJson,
-					);
+				await this.db.batchUpsert(
+					"messages",
+					messages?.filter(this.filterMessages, this).map(Message),
+				);
 			})
 			.on("contacts.upsert", async (contacts) => {
-				await this.db.batchInsert(this.db.knex("contacts"), contacts);
+				await this.db.batchUpsert("contacts", contacts);
+			})
+			.on("contacts.update", async (contacts) => {
+				await this.db.batchUpsert("contacts", contacts);
 			})
 			.on("messages.upsert", async ({ messages: msgs, type }) => {
 				const messages = msgs
 					.filter(this.filterMessages, this)
-					.map((m) => new Message(m, this).toJSON());
-				console.log(`New Messages ${type} : `, messages);
+					.map(Message);
 
 				if (!messages.length) {
 					return console.log("All messages filtered: ", msgs);
 				}
 
+				console.log(`New Messages ${type} : `, msgs, messages);
+
 				if (["append", "notify"].includes(type)) {
 					this.emit("message", messages);
 				}
 				if (["append", "notify", "prepend"].includes(type)) {
-					// this.store.data.messages?.unshift(
-					// 	...msgs.filter(this.filterMessages, this),
-					// );
-
-					// await this.store.write();
-					await this.db.batchInsert(
-						this.db.knex("messages"),
-						messages,
-					);
-					// .insert(messages)
-
-					// .onConflict("id")
-					// .merge();
+					await this.db.batchUpsert("messages", messages);
 				}
 			})
 			.on("presence.update", (presences) => {
@@ -222,34 +195,12 @@ export class Client extends EventEmitter {
 					...this.presences,
 					...presences.presences,
 				};
-				console.log(this.presences);
 
 				this.io.io.emit("presence", presences);
 			})
 			.on("chats.update", async (chats) => {
-				chats.forEach((chat) => {
-					const foundChat = this.store.data.chats?.find(
-						(ch) => chat.id == ch.id,
-					);
-
-					if (foundChat) {
-						if (chat.archive) foundChat.archive = chat.archive;
-
-						if (chat.conversationTimestamp) {
-							foundChat.conversationTimestamp =
-								chat.conversationTimestamp;
-						}
-
-						if (chat.unreadCount)
-							foundChat.unreadCount = chat.unreadCount;
-
-						if (chat.name) foundChat.name = chat.name;
-					}
-				});
-
 				this.io.io.emit("chats.update", chats);
-
-				await this.store.write();
+				await this.db.batchUpsert("chats", chats.map(Chat));
 			});
 	}
 }
