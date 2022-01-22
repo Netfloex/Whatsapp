@@ -11,25 +11,7 @@ const getSenderId = (message: WAMessage): string | undefined => {
 		message.key.participant ||
 		message.key.remoteJid ||
 		undefined;
-	let i: string | undefined;
-
-	try {
-		i = senderId && jidNormalizedUser(senderId);
-	} catch (error) {
-		console.log(error);
-		console.log(message);
-	}
-
-	if (!i)
-		console.log(
-			"SENderid Undefined",
-			`-${senderId}-`,
-			message.participant,
-			message.key.participant,
-			message.key.remoteJid,
-		);
-
-	return i;
+	return senderId && jidNormalizedUser(senderId);
 };
 
 export const Message = (message: WAMessage): MessageJson => ({
@@ -37,7 +19,8 @@ export const Message = (message: WAMessage): MessageJson => ({
 	time: parseTimestamp(message.messageTimestamp),
 	message: JSON.stringify(message?.message),
 	chatId: message.key.remoteJid ?? undefined,
-	fromMe: message.key.fromMe ?? undefined,
+
+	fromMe: message.key.fromMe == false ? 0 : 1,
 
 	senderId: getSenderId(message),
 

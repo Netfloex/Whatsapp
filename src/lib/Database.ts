@@ -120,4 +120,31 @@ export class Database {
 	async getContact(id: string): Promise<DBContact> {
 		return await this.knex("contacts").where({ id }).first().select();
 	}
+
+	async searchMessage({
+		content,
+		where,
+	}: {
+		content: string;
+		where?: Partial<MessageJson>;
+	}): Promise<MessageJson[]> {
+		return await this.knex("messages")
+			.whereLike("content", content)
+			.where(where)
+			.limit(5)
+			.orderBy("time", "desc")
+			.select();
+	}
+
+	async suggestMessage(content?: string): Promise<MessageJson | undefined> {
+		if (!content) return Promise.resolve(undefined);
+
+		return await this.knex("messages")
+			.whereLike("content", `${content}%`)
+			.where({ fromMe: 1 })
+			.groupBy("content")
+			.select(this.knex.raw("COUNT(??) as ??", ["content", "count"]), "*")
+			.orderBy("count", "desc")
+			.first();
+	}
 }

@@ -14,7 +14,7 @@ export type MessageJson = {
 	time?: string;
 	message?: string;
 	senderId?: string;
-	fromMe?: boolean;
+	fromMe?: 0 | 1;
 	chatId?: string;
 
 	content?: string;
@@ -55,5 +55,18 @@ export interface ClientToServer {
 	"presence.subscribe": (
 		jid: string,
 		reply: (data: DBContact) => void,
+	) => void;
+
+	"messages.search": (
+		where: {
+			content: string;
+			where?: Partial<MessageJson>;
+		},
+		reply: (messages: MessageJson[]) => void,
+	) => void;
+
+	"message.suggest": (
+		content: string,
+		reply: (message: Partial<MessageJson>) => void,
 	) => void;
 }

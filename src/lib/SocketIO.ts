@@ -71,6 +71,14 @@ export class SocketIO {
 					await this.client.socket?.sendMessage(jid, content);
 				})
 
+				.on("messages.search", async (condition, reply) => {
+					reply(await this.client.db.searchMessage(condition));
+				})
+
+				.on("message.suggest", async (content, reply) => {
+					reply((await this.client.db.suggestMessage(content)) ?? {});
+				})
+
 				.on("presence.subscribe", async (id, reply) => {
 					await this.client.socket?.presenceSubscribe(id);
 
