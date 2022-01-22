@@ -19,6 +19,7 @@ export class Client extends EventEmitter {
 	whatsappTimeout: NodeJS.Timeout | undefined;
 	db: Database;
 	dataDir: string;
+	qr?: string;
 
 	get authFile(): string {
 		return join(this.dataDir, "auth.json");
@@ -108,7 +109,10 @@ export class Client extends EventEmitter {
 			.on(
 				"connection.update",
 				async ({ connection, lastDisconnect, qr }) => {
-					if (qr) this.io.io.emit("qr", qr);
+					if (qr || connection == "open") {
+						this.qr = qr;
+						this.io.io.emit("qr", qr ?? "");
+					}
 
 					const last = lastDisconnect?.error as Boom;
 

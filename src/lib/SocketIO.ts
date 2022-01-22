@@ -33,6 +33,10 @@ export class SocketIO {
 				`Connection: ${sock.id.slice(0, 4)}, Clients: ${this.size}`,
 			);
 
+			if (this.client.qr) {
+				this.io.emit("qr", this.client.qr);
+			}
+
 			sock.on("disconnect", () => {
 				this.onConnectionChange();
 				console.log(
@@ -54,10 +58,6 @@ export class SocketIO {
 				})
 
 				.on("messages.for", async ({ chatId, length }, reply) => {
-					console.log(
-						await this.client.db.messagesFor(chatId, length),
-					);
-
 					reply(await this.client.db.messagesFor(chatId, length));
 				})
 
