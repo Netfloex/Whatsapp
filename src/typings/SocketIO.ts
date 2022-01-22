@@ -31,6 +31,7 @@ export interface ServerToClient {
 	message: (messages: MessageJson[]) => void;
 	presence: (presences: DBContact[]) => void;
 	"chats.update": (chats: Partial<Chat>[]) => void;
+	qr: (qr: string) => void;
 }
 
 export interface ClientToServer {

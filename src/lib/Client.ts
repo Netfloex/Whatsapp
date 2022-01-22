@@ -105,22 +105,31 @@ export class Client extends EventEmitter {
 		}
 
 		this.socket.ev
-			.on("connection.update", async ({ connection, lastDisconnect }) => {
-				const last = lastDisconnect?.error as Boom;
+			.on(
+				"connection.update",
+				async ({ connection, lastDisconnect, qr }) => {
+					if (qr) this.io.io.emit("qr", qr);
 
-				if (last?.data?.reconnect != false && connection == "close") {
+					const last = lastDisconnect?.error as Boom;
+
 					if (
-						last?.output?.statusCode == DisconnectReason.loggedOut
+						last?.data?.reconnect != false &&
+						connection == "close"
 					) {
-						console.log("Logged Out!");
-						await remove(this.authFile);
-						return;
-					}
-					console.log("Reconnecting in 1 second");
+						if (
+							last?.output?.statusCode ==
+							DisconnectReason.loggedOut
+						) {
+							console.log("Logged Out!");
+							await remove(this.authFile);
+							return;
+						}
+						console.log("Reconnecting in 1 second");
 
-					setTimeout(() => this.createConnection(), 1000);
-				}
-			})
+						setTimeout(() => this.createConnection(), 1000);
+					}
+				},
+			)
 			.on("chats.set", async ({ chats, messages }) => {
 				await this.db.batchUpsert("chats", chats?.map(Chat));
 
