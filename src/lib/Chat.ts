@@ -1,4 +1,4 @@
-import { Chat as BaileysChat } from "@adiwajshing/baileys-md";
+import { Chat as BaileysChat } from "@adiwajshing/baileys";
 import { WAChat } from "@typings/Baileys";
 import { ChatJson } from "@typings/SocketIO";
 
@@ -9,11 +9,7 @@ export const Chat = (chat: Partial<BaileysChat | WAChat>): ChatJson => ({
 
 	name: chat.name ?? undefined,
 
-	time: parseTimestamp(
-		typeof chat.conversationTimestamp == "object"
-			? chat.conversationTimestamp?.low
-			: chat.conversationTimestamp,
-	),
+	time: parseTimestamp(chat.conversationTimestamp),
 
 	unreadCount: chat.unreadCount ?? undefined,
 });

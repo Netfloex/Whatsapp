@@ -1,4 +1,4 @@
-import { PresenceData } from "@adiwajshing/baileys-md";
+import { PresenceData } from "@adiwajshing/baileys";
 import { DBContact } from "@typings/SocketIO";
 import { DateTime } from "luxon";
 

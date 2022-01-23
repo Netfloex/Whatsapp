@@ -1,4 +1,4 @@
-import { jidNormalizedUser, WAMessage } from "@adiwajshing/baileys-md";
+import { jidNormalizedUser, WAMessage } from "@adiwajshing/baileys";
 import { MessageJson } from "@typings/SocketIO";
 
 import { parseTimestamp } from "@utils";

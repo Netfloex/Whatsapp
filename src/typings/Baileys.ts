@@ -1,4 +1,4 @@
-import makeConnection, { Chat } from "@adiwajshing/baileys-md";
+import makeConnection, { Chat } from "@adiwajshing/baileys";
 
 export type WAChat = Chat & {
 	conversationTimestamp?: {

@@ -3,7 +3,7 @@ import {
 	isJidUser,
 	WAMessage,
 	WAMessageStubType,
-} from "@adiwajshing/baileys-md";
+} from "@adiwajshing/baileys";
 import { Boom } from "@hapi/boom";
 import { Socket } from "@typings/Baileys";
 import { remove } from "fs-extra";
@@ -134,13 +134,11 @@ export class Client extends EventEmitter {
 					}
 				},
 			)
-			.on("chats.set", async ({ chats, messages }) => {
-				await this.db.batchUpsert("chats", chats?.map(Chat));
-
-				await this.db.batchUpsert(
-					"messages",
-					messages?.filter(this.filterMessages, this).map(Message),
-				);
+			.on("chats.set", async ({ chats }) => {
+				await this.db.batchUpsert("chats", chats.map(Chat));
+			})
+			.on("messages.set", async ({ messages }) => {
+				await this.db.batchUpsert("messages", messages.map(Message));
 			})
 			.on("contacts.upsert", async (contacts) => {
 				await this.db.batchUpsert("contacts", contacts);

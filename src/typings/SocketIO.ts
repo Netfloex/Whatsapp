@@ -1,4 +1,4 @@
-import type { AnyMessageContent, Chat } from "@adiwajshing/baileys-md";
+import type { AnyMessageContent, Chat } from "@adiwajshing/baileys";
 
 export type DBContact = {
 	id?: string;

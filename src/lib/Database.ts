@@ -1,4 +1,4 @@
-import { Contact, jidNormalizedUser } from "@adiwajshing/baileys-md";
+import { Contact, jidNormalizedUser } from "@adiwajshing/baileys";
 import { ChatJson, DBContact, MessageJson } from "@typings/SocketIO";
 import { Knex, knex } from "knex";
 import { chunk } from "lodash";

@@ -26,7 +26,7 @@ export default defineConfig({
 		json(),
 		typescript(),
 		commonjs({
-			ignore: ["sharp", "jimp", "qrcode-terminal"],
+			ignore: ["qrcode-terminal"],
 		}),
 	],
 });
