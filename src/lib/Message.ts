@@ -1,10 +1,10 @@
-import { jidNormalizedUser, WAMessage } from "@adiwajshing/baileys";
+import { Contact, jidNormalizedUser, WAMessage } from "@adiwajshing/baileys";
 import { MessageJson } from "@typings/SocketIO";
 
 import { parseTimestamp } from "@utils";
 
-const getSenderId = (message: WAMessage): string | undefined => {
-	if (message.key.fromMe) return "me";
+const getSenderId = (message: WAMessage, me: Contact): string | undefined => {
+	if (message.key.fromMe) return me.id;
 
 	const senderId =
 		message.participant ||
@@ -14,7 +14,7 @@ const getSenderId = (message: WAMessage): string | undefined => {
 	return senderId && jidNormalizedUser(senderId);
 };
 
-export const Message = (message: WAMessage): MessageJson => ({
+export const Message = (message: WAMessage, me: Contact): MessageJson => ({
 	id: message.key.id!,
 	time: parseTimestamp(message.messageTimestamp),
 	message: JSON.stringify(message?.message),
@@ -22,7 +22,7 @@ export const Message = (message: WAMessage): MessageJson => ({
 
 	fromMe: message.key.fromMe == false ? 0 : 1,
 
-	senderId: getSenderId(message),
+	senderId: getSenderId(message, me),
 
 	content:
 		message?.message?.conversation ||

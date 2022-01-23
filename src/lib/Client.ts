@@ -1,6 +1,8 @@
 import {
+	Contact,
 	DisconnectReason,
 	isJidUser,
+	jidNormalizedUser,
 	WAMessage,
 	WAMessageStubType,
 } from "@adiwajshing/baileys";
@@ -20,6 +22,7 @@ export class Client extends EventEmitter {
 	db: Database;
 	dataDir: string;
 	qr?: string;
+	me?: Contact;
 
 	get authFile(): string {
 		return join(this.dataDir, "auth.json");
@@ -99,16 +102,19 @@ export class Client extends EventEmitter {
 
 		this.socket = await createConnection(this);
 
-		if (this.socket?.user?.name) {
-			await this.db.addMe(this.socket.user);
-
-			console.log(`Logged in with: ${this.socket?.user?.name}`);
-		}
-
 		this.socket.ev
 			.on(
 				"connection.update",
 				async ({ connection, lastDisconnect, qr }) => {
+					if (this.socket?.user?.id && !this.me?.id) {
+						this.me = {
+							id: jidNormalizedUser(this.socket.user.id),
+							name: this.socket.user.name,
+						};
+
+						console.log(`Logged in with: ${this.me}`);
+					}
+
 					if (qr || connection == "open") {
 						this.qr = qr;
 						this.io.io.emit("qr", qr ?? "");
@@ -138,7 +144,10 @@ export class Client extends EventEmitter {
 				await this.db.batchUpsert("chats", chats.map(Chat));
 			})
 			.on("messages.set", async ({ messages }) => {
-				await this.db.batchUpsert("messages", messages.map(Message));
+				await this.db.batchUpsert(
+					"messages",
+					messages.map((msg) => Message(msg, this.me!)),
+				);
 			})
 			.on("contacts.upsert", async (contacts) => {
 				await this.db.batchUpsert("contacts", contacts);
@@ -149,7 +158,7 @@ export class Client extends EventEmitter {
 			.on("messages.upsert", async ({ messages: msgs, type }) => {
 				const messages = msgs
 					.filter(this.filterMessages, this)
-					.map(Message);
+					.map((msg) => Message(msg, this.me!));
 
 				if (!messages.length) {
 					return console.log("All messages filtered: ", msgs);

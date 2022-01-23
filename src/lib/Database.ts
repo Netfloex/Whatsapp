@@ -1,4 +1,3 @@
-import { Contact, jidNormalizedUser } from "@adiwajshing/baileys";
 import { ChatJson, DBContact, MessageJson } from "@typings/SocketIO";
 import { Knex, knex } from "knex";
 import { chunk } from "lodash";
@@ -43,13 +42,13 @@ export class Database {
 			table.boolean("fromMe");
 			table.string("chatId");
 			table.string("content");
+			table.integer("status");
 		});
 
 		await this.createTableIfNotExists("contacts", (table) => {
 			table.string("id").unique();
 			table.string("name");
 			table.string("notify");
-			table.boolean("isMe");
 			table.string("presence");
 			table.dateTime("presenceUpdated");
 		});
@@ -72,17 +71,6 @@ export class Database {
 		}
 	}
 
-	async addMe(me: Contact): Promise<void> {
-		await this.batchUpsert("contacts", [
-			{
-				id: jidNormalizedUser(me.id),
-				name: me.name,
-				notify: me.notify,
-				isMe: true,
-			},
-		]);
-	}
-
 	async chats(length = 100): Promise<ChatJson[]> {
 		return await this.knex("chats")
 			.orderBy("time", "desc")
@@ -102,19 +90,7 @@ export class Database {
 			.where("chatId", chatId)
 			.orderBy("time", "desc")
 			.limit(length)
-			.select(
-				"*",
-				this.knex.raw("REPLACE(??, ?, ?) as senderId", [
-					"senderId",
-					"me",
-					(
-						await this.knex("contacts")
-							.where({ isMe: 1 })
-							.first()
-							.select()
-					).id,
-				]),
-			);
+			.select("*");
 	}
 
 	async getContact(id: string): Promise<DBContact> {
