@@ -29,4 +29,6 @@ export const Message = (message: WAMessage, me: Contact): MessageJson => ({
 		message?.message?.extendedTextMessage?.text ||
 		message?.message?.imageMessage?.caption ||
 		(message?.message?.imageMessage != undefined ? "📷 Photo" : undefined),
+
+	status: message.status ?? undefined,
 });

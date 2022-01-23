@@ -1,4 +1,8 @@
-import type { AnyMessageContent, Chat } from "@adiwajshing/baileys";
+import type {
+	AnyMessageContent,
+	Chat,
+	WAMessageStatus,
+} from "@adiwajshing/baileys";
 
 export type DBContact = {
 	id?: string;
@@ -16,7 +20,7 @@ export type MessageJson = {
 	senderId?: string;
 	fromMe?: 0 | 1;
 	chatId?: string;
-
+	status?: WAMessageStatus;
 	content?: string;
 };
 

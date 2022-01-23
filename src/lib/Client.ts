@@ -112,7 +112,7 @@ export class Client extends EventEmitter {
 							name: this.socket.user.name,
 						};
 
-						console.log(`Logged in with: ${this.me}`);
+						console.log(`Logged in with: ${this.me.name}`);
 					}
 
 					if (qr || connection == "open") {
@@ -172,6 +172,14 @@ export class Client extends EventEmitter {
 				if (["append", "notify", "prepend"].includes(type)) {
 					await this.db.batchUpsert("messages", messages);
 				}
+			})
+			.on("messages.update", async (messages) => {
+				await this.db.batchUpsert(
+					"messages",
+					messages.map(({ key, update }) =>
+						Message({ key, ...update }, this.me!),
+					),
+				);
 			})
 			.on("presence.update", async ({ id, presences }) => {
 				if (!isJidUser(id)) return;
