@@ -57,6 +57,8 @@ export interface ClientToServer {
 		reply: (contact: DBContact | undefined) => void,
 	) => void;
 
+	contacts: (reply: (contact: DBContact[]) => void) => void;
+
 	"message.send": (
 		message: AnyMessageContent & {
 			jid: string;

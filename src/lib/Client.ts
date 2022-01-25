@@ -180,6 +180,10 @@ export class Client extends EventEmitter {
 				}
 			})
 			.on("messages.update", async (messages) => {
+				if (!messages.some((msg) => "status" in msg.update)) {
+					throw new Error("Other Update than status?");
+				}
+
 				await this.db.batchUpsert(
 					"messages",
 					messages.map(({ key, update }) =>

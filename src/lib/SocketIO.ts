@@ -65,6 +65,10 @@ export class SocketIO {
 					reply(await this.client.db.getContact(chatId));
 				})
 
+				.on("contacts", async (reply) => {
+					reply(await this.client.db.knex("contacts"));
+				})
+
 				.on("message.send", async ({ jid, ...content }) => {
 					console.log(`Send a message to ${jid}`);
 
