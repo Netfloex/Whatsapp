@@ -8,7 +8,9 @@ import {
 } from "@adiwajshing/baileys";
 import { Boom } from "@hapi/boom";
 import { Socket } from "@typings/Baileys";
+import { ChatJson } from "@typings/SocketIO";
 import { remove } from "fs-extra";
+import { omit, pick } from "lodash";
 import { join } from "path";
 import { EventEmitter } from "stream";
 
@@ -18,16 +20,17 @@ import { createConnection } from "@utils";
 export class Client extends EventEmitter {
 	socket?: Socket;
 	io: SocketIO;
-	whatsappTimeout: NodeJS.Timeout | undefined;
 	db: Database;
-	dataDir: string;
 	qr?: string;
-	me?: Contact;
 
+	private whatsappTimeout: NodeJS.Timeout | undefined;
+	private me?: Contact;
+
+	private dataDir: string;
 	get authFile(): string {
 		return join(this.dataDir, "auth.json");
 	}
-	get storeFile(): string {
+	private get storeFile(): string {
 		return join(this.dataDir, "store.db");
 	}
 
@@ -143,6 +146,9 @@ export class Client extends EventEmitter {
 			.on("chats.set", async ({ chats }) => {
 				await this.db.batchUpsert("chats", chats.map(Chat));
 			})
+			.on("chats.upsert", async (chats) => {
+				await this.db.batchUpsert("chats", chats.map(Chat));
+			})
 			.on("messages.set", async ({ messages }) => {
 				await this.db.batchUpsert(
 					"messages",
@@ -177,9 +183,35 @@ export class Client extends EventEmitter {
 				await this.db.batchUpsert(
 					"messages",
 					messages.map(({ key, update }) =>
-						Message({ key, ...update }, this.me!),
+						pick(
+							Message({ key, ...update }, this.me!),
+							"id",
+							"status",
+						),
 					),
 				);
+
+				const chatIds = await this.db.knex.raw<
+					Required<Pick<ChatJson, "id" | "unreadCount">>[]
+				>(
+					`${this.db
+						.knex("chats")
+						.whereIn(
+							"id",
+							this.db
+								.knex("messages")
+								.whereIn(
+									"id",
+									messages.map((msg) => msg.key.id!),
+								)
+								.select("chatId"),
+						)
+						.update({ unreadCount: 0 })
+						.toQuery()} returning ??, ??`,
+					["id", "unreadCount"],
+				);
+
+				this.io.io.emit("chats.unreadCount", chatIds);
 			})
 			.on("presence.update", async ({ id, presences }) => {
 				if (!isJidUser(id)) return;
@@ -187,9 +219,48 @@ export class Client extends EventEmitter {
 				await this.db.batchUpsert("contacts", Presences(presences));
 				this.io.io.emit("presence", Presences(presences));
 			})
-			.on("chats.update", async (chats) => {
-				this.io.io.emit("chats.update", chats);
-				await this.db.batchUpsert("chats", chats.map(Chat));
+			.on("chats.update", async (chatsUpdate) => {
+				this.io.io.emit("chats.update", chatsUpdate);
+				const chats = chatsUpdate.map(Chat);
+
+				await this.db.batchUpsert(
+					"chats",
+					chats
+						.map((chat) => omit(chat, "unreadCount"))
+						.filter((chat) => Object.keys(chat).length > 1),
+				);
+
+				const unreadCountEmit = await Promise.all(
+					chats
+						.filter((chat) => chat.unreadCount)
+						.map(async (chat) => {
+							const unreadCount = (
+								await this.db.knex.raw<
+									Array<
+										Required<Pick<ChatJson, "unreadCount">>
+									>
+								>(
+									`${this.db
+										.knex("chats")
+										.where({ id: chat.id })
+										.increment(
+											"unreadCount",
+											chat.unreadCount!,
+										)
+										.toQuery()} returning ??`,
+									"unreadCount",
+								)
+							)[0].unreadCount;
+
+							return {
+								id: chat.id!,
+								unreadCount,
+							};
+						}),
+				);
+
+				if (unreadCountEmit.length)
+					this.io.io.emit("chats.unreadCount", unreadCountEmit);
 			});
 	}
 }

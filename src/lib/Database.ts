@@ -29,7 +29,7 @@ export class Database {
 			table.string("id").unique();
 			table.string("name");
 			table.dateTime("time");
-			table.integer("unreadCount");
+			table.integer("unreadCount").defaultTo(0);
 			table.boolean("archive");
 			table.boolean("muted");
 		});
@@ -93,24 +93,24 @@ export class Database {
 			.select("*");
 	}
 
-	async getContact(id: string): Promise<DBContact> {
+	async getContact(id: string): Promise<DBContact | undefined> {
 		return await this.knex("contacts").where({ id }).first().select();
 	}
 
-	async searchMessage({
-		content,
-		where,
-	}: {
-		content: string;
-		where?: Partial<MessageJson>;
-	}): Promise<MessageJson[]> {
-		return await this.knex("messages")
-			.whereLike("content", content)
-			.where(where)
-			.limit(5)
-			.orderBy("time", "desc")
-			.select();
-	}
+	// async searchMessage({
+	// 	content,
+	// 	where,
+	// }: {
+	// 	content: string;
+	// 	where?: Partial<MessageJson>;
+	// }): Promise<MessageJson[]> {
+	// 	return await this.knex("messages")
+	// 		.whereLike("content", content)
+	// 		.where(where)
+	// 		.limit(5)
+	// 		.orderBy("time", "desc")
+	// 		.select();
+	// }
 
 	async suggestMessage(content?: string): Promise<MessageJson | undefined> {
 		if (!content) return Promise.resolve(undefined);
