@@ -54,19 +54,28 @@ export class Database {
 		});
 	}
 
+	createQueryWithCoalesce<T>(
+		query: string,
+		bindings?: Knex.RawBinding[],
+	): Knex.Raw<T> {
+		return this.knex.raw(
+			query.replace(/excluded\.(`\w+`)/g, "coalesce($&, $1)"),
+			bindings!,
+		);
+	}
+
 	async batchUpsert(tableName: Knex.TableNames, data: any[]): Promise<void> {
 		if (!data.length) return;
 
 		const chunked = chunk(data, 500);
 
 		for (const data of chunked) {
-			await this.knex.raw(
+			await this.createQueryWithCoalesce(
 				this.knex(tableName)
 					.insert(data)
 					.onConflict("id")
 					.merge()
-					.toQuery()
-					.replace(/excluded\.(`\w+`)/g, "coalesce($&, $1)"),
+					.toQuery(),
 			);
 		}
 	}

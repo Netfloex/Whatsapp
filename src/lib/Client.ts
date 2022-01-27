@@ -8,9 +8,14 @@ import {
 } from "@adiwajshing/baileys";
 import { Boom } from "@hapi/boom";
 import { Socket } from "@typings/Baileys";
-import { ChatJson } from "@typings/SocketIO";
+import {
+	ChatJson,
+	ChatUpdate,
+	StatusMessageUpdate,
+	UnreadCountChatUpdate,
+} from "@typings/SocketIO";
 import { remove } from "fs-extra";
-import { omit, pick } from "lodash";
+import { isUndefined, omit, omitBy, pick } from "lodash";
 import { join } from "path";
 import { EventEmitter } from "stream";
 
@@ -181,22 +186,33 @@ export class Client extends EventEmitter {
 			})
 			.on("messages.update", async (messages) => {
 				if (!messages.some((msg) => "status" in msg.update)) {
-					throw new Error("Other Update than status?");
+					console.log(messages);
+
+					console.error(new Error("Other Update than status?"));
 				}
 
-				await this.db.batchUpsert(
-					"messages",
-					messages.map(({ key, update }) =>
-						pick(
-							Message({ key, ...update }, this.me!),
-							"id",
-							"status",
-						),
-					),
+				const messagesUpdate = await this.db.createQueryWithCoalesce<
+					StatusMessageUpdate[]
+				>(
+					`${this.db
+						.knex("messages")
+						.insert(
+							messages.map(({ key, update }) =>
+								pick(
+									Message({ key, ...update }, this.me!),
+									"id",
+									"status",
+								),
+							),
+						)
+						.onConflict("id")
+						.merge()
+						.toQuery()} returning ??, ??, ??`,
+					["id", "chatId", "status"],
 				);
 
-				const chatIds = await this.db.knex.raw<
-					Required<Pick<ChatJson, "id" | "unreadCount">>[]
+				const unreadCountUpdate = await this.db.knex.raw<
+					UnreadCountChatUpdate[]
 				>(
 					`${this.db
 						.knex("chats")
@@ -215,7 +231,8 @@ export class Client extends EventEmitter {
 					["id", "unreadCount"],
 				);
 
-				this.io.io.emit("chats.unreadCount", chatIds);
+				this.io.io.emit("message.update", messagesUpdate);
+				this.io.io.emit("chats.update", unreadCountUpdate);
 			})
 			.on("presence.update", async ({ id, presences }) => {
 				if (!isJidUser(id)) return;
@@ -224,26 +241,30 @@ export class Client extends EventEmitter {
 				this.io.io.emit("presence", Presences(presences));
 			})
 			.on("chats.update", async (chatsUpdate) => {
-				this.io.io.emit("chats.update", chatsUpdate);
-				const chats = chatsUpdate.map(Chat);
+				const chats = chatsUpdate.map((chat) =>
+					omitBy(Chat(chat), isUndefined),
+				) as ChatJson[];
 
-				await this.db.batchUpsert(
-					"chats",
-					chats
-						.map((chat) => omit(chat, "unreadCount"))
-						.filter((chat) => Object.keys(chat).length > 1),
+				const updateVerifiedChats = chats
+					.map((chat) => omit(chat, "unreadCount"))
+					.filter((chat) =>
+						Object.keys(chat).some((key) =>
+							["time", "name"].includes(key),
+						),
+					);
+
+				await this.db.batchUpsert("chats", updateVerifiedChats);
+				this.io.io.emit(
+					"chats.update",
+					updateVerifiedChats as ChatUpdate[],
 				);
 
 				const unreadCountEmit = await Promise.all(
 					chats
-						.filter((chat) => chat.unreadCount)
+						.filter((chat) => chat.unreadCount != undefined)
 						.map(async (chat) => {
 							const unreadCount = (
-								await this.db.knex.raw<
-									Array<
-										Required<Pick<ChatJson, "unreadCount">>
-									>
-								>(
+								await this.db.knex.raw<UnreadCountChatUpdate[]>(
 									`${this.db
 										.knex("chats")
 										.where({ id: chat.id })
@@ -264,7 +285,7 @@ export class Client extends EventEmitter {
 				);
 
 				if (unreadCountEmit.length)
-					this.io.io.emit("chats.unreadCount", unreadCountEmit);
+					this.io.io.emit("chats.update", unreadCountEmit);
 			});
 	}
 }

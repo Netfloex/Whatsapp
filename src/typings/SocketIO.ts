@@ -1,19 +1,18 @@
-import type {
-	AnyMessageContent,
-	Chat,
-	WAMessageStatus,
-} from "@adiwajshing/baileys";
+import type { AnyMessageContent, WAMessageStatus } from "@adiwajshing/baileys";
 
-export type DBContact = {
+/* 
+	Interfaces
+*/
+export interface DBContact {
 	id?: string;
 	name?: string;
 	notify?: string;
 	isMe?: 0 | 1;
 	presence?: string;
 	presenceUpdated?: string;
-};
+}
 
-export type MessageJson = {
+export interface MessageJson {
 	id: string;
 	time?: string;
 	message?: string;
@@ -22,22 +21,53 @@ export type MessageJson = {
 	chatId?: string;
 	status?: WAMessageStatus;
 	content?: string;
-};
+}
 
-export type ChatJson = {
+export interface ChatJson {
 	id: string;
 	name?: string;
 	time?: string;
 	unreadCount?: number;
-};
+}
+
+/* 
+	Message Updates
+*/
+
+type CreateMessageUpdateType<T extends keyof MessageJson> = Required<
+	Pick<MessageJson, "id" | T>
+>;
+
+export type StatusMessageUpdate = CreateMessageUpdateType<"status">;
+
+type MessageUpdate = StatusMessageUpdate;
+
+/* 
+	Chat Updates
+*/
+
+type CreateChatUpdateType<T extends keyof ChatJson> = Required<
+	Pick<ChatJson, "id" | T>
+>;
+
+export type UnreadCountChatUpdate = CreateChatUpdateType<"unreadCount">;
+type TimeChatUpdate = CreateChatUpdateType<"time">;
+type NameChatUpdate = CreateChatUpdateType<"name">;
+
+export type ChatUpdate =
+	| UnreadCountChatUpdate
+	| TimeChatUpdate
+	| NameChatUpdate;
+
+/* 
+	SocketIO 
+*/
 
 export interface ServerToClient {
 	message: (messages: MessageJson[]) => void;
+	"message.update": (messages: MessageUpdate[]) => void;
 	presence: (presences: DBContact[]) => void;
-	"chats.update": (chats: Partial<Chat>[]) => void;
-	"chats.unreadCount": (
-		chats: Required<Pick<ChatJson, "id" | "unreadCount">>[],
-	) => void;
+	"chats.update": (chats: ChatUpdate[]) => void;
 	qr: (qr: string) => void;
 }
 

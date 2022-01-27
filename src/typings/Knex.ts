@@ -7,9 +7,6 @@ declare module "knex/types/tables" {
 		chats: ChatJson;
 		messages: MessageJson;
 		contacts: DBContact;
-		test: {
-			ewa: true;
-		};
 	}
 }
 
