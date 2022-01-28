@@ -38,7 +38,7 @@ type CreateMessageUpdateType<T extends keyof MessageJson> = Required<
 	Pick<MessageJson, "id" | T>
 >;
 
-export type StatusMessageUpdate = CreateMessageUpdateType<"status">;
+export type StatusMessageUpdate = CreateMessageUpdateType<"status" | "chatId">;
 
 type MessageUpdate = StatusMessageUpdate;
 
